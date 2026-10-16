@@ -27,8 +27,17 @@ python scripts\check_setup.py
 pytest
 ```
 
+## Database
+PostgreSQL 18. Create the database once (see PROGRESS.md), then build and seed it:
+```powershell
+python scripts\init_db.py
+```
+This **wipes and rebuilds** all tables every time.
+
+Seed data: 17 **synthetic** Ernakulam/Kochi properties. Localities and landmarks are real, but all property names, prices, rules and reviews are invented. All verifications are simulated.
+
 ## Environment variables
 See `.env.example`. Never commit `.env`.
 
 ## Known limitations
-Phase 1 only: no database, backend or MCP server yet.
+No backend search or MCP server yet. Seed data is fictional.
