@@ -10,7 +10,7 @@ export function haversineKm(lat1: number, lng1: number, lat2: number, lng2: numb
   return 2 * R * Math.asin(Math.sqrt(a))
 }
 
-/** Road distance is roughly 1.35x straight-line distance in Kakkanad's lane network. */
+/** Road distance is roughly 1.35x straight-line distance in a dense lane network (calibrated on the launch area). */
 export const ROAD_FACTOR = 1.35
 
 export function commuteFor(straightKm: number) {

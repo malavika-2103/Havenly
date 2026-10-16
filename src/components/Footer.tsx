@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom'
 import DemoNotice from './DemoNotice'
+import { useStore } from '../lib/store'
 
 export default function Footer() {
+  const { meta } = useStore()
   return (
     <footer className="footer">
       <div className="container">
@@ -25,7 +27,7 @@ export default function Footer() {
           <div>
             <h5>Platform</h5>
             <Link to="/about">How verification works</Link>
-            <Link to="/about">AI-assisted moderation</Link>
+            <Link to="/requests">My booking requests</Link>
             <Link to="/saved">Your shortlist</Link>
             <Link to="/compare">Compare places</Link>
           </div>
@@ -39,7 +41,7 @@ export default function Footer() {
         </div>
         <DemoNotice tone="dark" />
         <div className="footer-bottom">
-          <span>© 2026 Havenly · Now covering Kakkanad, Ernakulam</span>
+          <span>© 2026 Havenly{meta ? ` · Now covering ${meta.active_area.name}, ${meta.active_area.district}` : ''}</span>
           <span>Havenly is an information & decision-support platform. It does not guarantee safety, and it never takes payment.</span>
         </div>
       </div>

@@ -135,7 +135,7 @@ export function computeEstimate(db: DB, slug: string, input: EstimateInput, now 
 
   if (p.electricity_policy === 'metered') notes.push('Electricity is billed on the meter and is not included in this estimate.')
   if (p.electricity_policy === 'included') notes.push('Electricity is included in the rent.')
-  notes.push(`Notice period: ${p.notice_period_days} days. ${p.notice_terms ?? ''}`.trim())
+  notes.push(p.notice_terms ? `Notice: ${p.notice_terms}` : `Notice period: ${p.notice_period_days} days.`)
   notes.push('Havenly does not take any payment. If the owner accepts, you pay the property directly after visiting.')
 
   const total = lines.reduce((s, l) => s + l.amount, 0)

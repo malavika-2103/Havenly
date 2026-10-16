@@ -31,6 +31,8 @@ export interface Meta {
   coming_soon: AreaInfo[]
   demo: boolean
   demo_notice: string | null
+  /** Example searches built from the active area's own landmarks, so the UI never hardcodes place names. */
+  example_searches: string[]
   payments_enabled: false
 }
 
@@ -216,6 +218,7 @@ export interface PropertyDetail extends PropertySummary {
     advance_months: number
     maintenance_charge: number
     electricity_policy: 'included' | 'metered' | 'fixed_fee'
+    electricity_label: string
     other_charges: OtherCharge[]
     notice_period_days: number
     notice_terms: string | null

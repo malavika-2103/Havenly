@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS landmarks (
   slug        TEXT NOT NULL,
   name        TEXT NOT NULL,
   kind        TEXT NOT NULL CHECK (kind IN ('it_park', 'campus', 'government', 'transit', 'hospital', 'market')),
+  aliases     TEXT NOT NULL DEFAULT '[]',  -- JSON: other names people type, used by search interpretation
   lat         REAL NOT NULL,
   lng         REAL NOT NULL,
   created_at  TEXT NOT NULL,

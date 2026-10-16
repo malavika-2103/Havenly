@@ -19,7 +19,7 @@ const countBy = (rows: Row[], key: string) => rows.reduce<Record<string, number>
 const eq = (a: Record<string, number>, b: Record<string, number>) => Object.keys({ ...a, ...b }).every((k) => (a[k] ?? 0) === (b[k] ?? 0))
 
 const props = all(`SELECT p.*, a.slug AS area_slug FROM properties p JOIN areas a ON a.id = p.area_id`)
-const byId = new Map(props.map((p) => [p.id, p]))
+const byId = new Map<string, any>(props.map((p) => [p.id, p]))
 const rooms = all('SELECT * FROM room_inventory')
 const roomsOf = (pid: string) => rooms.filter((r) => r.property_id === pid)
 
@@ -138,7 +138,7 @@ check('available_beds within total_beds', rooms.every((r) => r.available_beds >=
 
 // ---------------- commute ----------------
 section = 'Commute'
-const lms = new Map(all('SELECT * FROM landmarks').map((l) => [l.id, l]))
+const lms = new Map<string, any>(all('SELECT * FROM landmarks').map((l) => [l.id, l]))
 const commuteBad = all('SELECT * FROM commute').filter((c) => {
   const p = byId.get(c.property_id)
   const l = lms.get(c.landmark_id)
@@ -201,9 +201,9 @@ check('Reviews shown as verified only with approved residency', approved.every((
 // ---------------- review text agrees with the listing ----------------
 section = 'Review text matches the listing'
 const amen = (pid: string, id: string) => !!one('SELECT 1 AS x FROM property_amenities WHERE property_id = ? AND amenity_id = ?', pid, id)
-const sf = new Map(safety.map((s) => [s.property_id, s]))
-const fd = new Map(foodRows.map((f) => [f.property_id, f]))
-const rl = new Map(rulesRows.map((r) => [r.property_id, r]))
+const sf = new Map<string, any>(safety.map((s) => [s.property_id, s]))
+const fd = new Map<string, any>(foodRows.map((f) => [f.property_id, f]))
+const rl = new Map<string, any>(rulesRows.map((r) => [r.property_id, r]))
 const rules: [string, (r: Row) => boolean][] = [
   ['No CCTV praise where CCTV is none', (r) => sf.get(r.property_id).cctv !== 'none' || !/cctv|camera/i.test(r.body) || /\bno (cctv|camera)|not a single camera|isn'?t any (cctv|camera)/i.test(r.body)],
   ['No AC mention where no room has AC', (r) => roomsOf(r.property_id).some((x) => x.ac === 1) || !/\bAC\b|air[- ]?con/.test(r.body) || /\bno AC\b|non-AC/i.test(r.body)],
@@ -237,7 +237,7 @@ async function apiChecks() {
   const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}/api`
   const owners = all('SELECT owner_name, phone, email FROM owners')
   const secrets = owners.flatMap((o) => [o.phone, o.email, o.owner_name])
-  const login = await (await fetch(`${base}/auth/demo-login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })).json()
+  const login = (await (await fetch(`${base}/auth/demo-login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })).json()) as any
   const auth = { Authorization: `Bearer ${login.token}`, 'Content-Type': 'application/json' }
   const slugs = props.map((p) => p.slug)
   const urls: [string, RequestInit?][] = [
@@ -254,12 +254,12 @@ async function apiChecks() {
     if (/"(owner_name|owner_phone|owner_email|phone)"\s*:/.test(text) || secrets.some((s) => text.includes(s))) leaks.push(u)
   }
   check(`No owner contact field or value in ${urls.length} public responses`, leaks.length === 0, leaks.join(', '))
-  const pending = await (await fetch(`${base}/properties/tulsi-nest-womens-pg/reviews`)).json()
+  const pending = (await (await fetch(`${base}/properties/tulsi-nest-womens-pg/reviews`)).json()) as any
   check('Pending/flagged/rejected reviews are not public', !pending.results.some((r: Row) => r.id.startsWith('rev_queue')))
   check('Every public seed review is labelled as a sample', pending.results.every((r: Row) => r.is_sample === true))
-  const detail = await (await fetch(`${base}/properties/nila-womens-hostel`)).json()
+  const detail = (await (await fetch(`${base}/properties/nila-womens-hostel`)).json()) as any
   check('Unverified place does not show a Verified badge', detail.verified_badge === false)
-  const anjili = await (await fetch(`${base}/properties/anjili-womens-hostel`)).json()
+  const anjili = (await (await fetch(`${base}/properties/anjili-womens-hostel`)).json()) as any
   check('Under 3 reviews shows "not enough reviews yet"', anjili.review_summary.enough === false && anjili.rating === null && /Not enough reviews/.test(anjili.review_summary.message))
   server.close()
 }

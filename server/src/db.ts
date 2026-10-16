@@ -11,6 +11,9 @@ let instance: DB | null = null
 export function migrate(db: DB) {
   const sql = fs.readFileSync(path.join(SERVER_ROOT, 'src', 'schema.sql'), 'utf8')
   db.exec(sql)
+  // Additive column migrations for databases created by an earlier schema.
+  const cols = (db.prepare('PRAGMA table_info(landmarks)').all() as { name: string }[]).map((c) => c.name)
+  if (!cols.includes('aliases')) db.exec("ALTER TABLE landmarks ADD COLUMN aliases TEXT NOT NULL DEFAULT '[]'")
 }
 
 export function openDb(file = config.dbPath): DB {

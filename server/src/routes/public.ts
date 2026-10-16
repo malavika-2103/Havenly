@@ -27,11 +27,29 @@ export function publicRoutes() {
       const active = areas.find((a) => a.slug === config.activeArea && a.status === 'active')
       if (!active) throw notFound(`The configured area “${config.activeArea}” has no data. Run npm run seed.`)
       const demo = config.demoMode || !!db().prepare(`SELECT 1 FROM properties WHERE data_source = 'demo_seed' LIMIT 1`).get()
+      const lm = db()
+        // Landmarks with the most listings within 15 minutes come first.
+        .prepare(
+          `SELECT l.name FROM landmarks l JOIN areas a ON a.id = l.area_id WHERE a.slug = ?
+           ORDER BY CASE l.kind WHEN 'it_park' THEN 0 WHEN 'campus' THEN 1 ELSE 2 END,
+             (SELECT COUNT(*) FROM commute c WHERE c.landmark_id = l.id AND c.minutes_auto <= 15) DESC, l.name`,
+        )
+        .all(config.activeArea)
+        .map((l: any) => l.name as string)
+      const it = lm[0] ?? active.name
+      const second = lm.find((n) => n !== it && !n.startsWith(it.split(' ')[0])) ?? it
+      const example_searches = [
+        `Women's PG near ${it.replace(/ Phase 1$/, '')} under 9000 with food`,
+        `Hostel in ${active.name} with flexible late entry and Wi-Fi`,
+        `Shared rental near ${second} with attached bathroom`,
+        `Working women's hostel with a 24x7 guard and a warden`,
+      ]
       return {
         active_area: active,
         coming_soon: areas.filter((a) => a.status === 'coming_soon'),
         demo,
         demo_notice: demo ? DEMO_NOTICE : null,
+        example_searches,
         payments_enabled: false,
       }
     }),

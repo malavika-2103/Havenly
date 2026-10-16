@@ -212,6 +212,7 @@ export function getPropertyDetail(db: DB, slug: string): PropertyDetail {
       advance_months: ps.advance_months,
       maintenance_charge: ps.maintenance_charge,
       electricity_policy: ps.electricity_policy,
+      electricity_label: label('electricity_policy', ps.electricity_policy),
       other_charges: parseJson(ps.other_charges, []),
       notice_period_days: ps.notice_period_days,
       notice_terms: ps.notice_terms,

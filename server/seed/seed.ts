@@ -59,7 +59,7 @@ export function seed(dbPath?: string) {
 
     for (const a of areas) insert('areas', { ...a })
     for (const s of subAreas) insert('sub_areas', { ...s })
-    for (const l of landmarks) insert('landmarks', { ...l })
+    for (const l of landmarks) insert('landmarks', { ...l, aliases: JSON.stringify(l.aliases) })
     for (const a of amenities) {
       // Reference data, kept across purges.
       db.prepare(

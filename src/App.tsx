@@ -10,6 +10,9 @@ import Saved from './pages/Saved'
 import Compare from './pages/Compare'
 import Experiences from './pages/Experiences'
 import About from './pages/About'
+import MyRequests from './pages/MyRequests'
+import Admin from './pages/Admin'
+import { Empty } from './components/States'
 
 export default function App() {
   return (
@@ -24,7 +27,10 @@ export default function App() {
             <Route path="/saved" element={<Saved />} />
             <Route path="/compare" element={<Compare />} />
             <Route path="/experiences" element={<Experiences />} />
+            <Route path="/requests" element={<MyRequests />} />
+            <Route path="/admin" element={<Admin />} />
             <Route path="/about" element={<About />} />
+            <Route path="*" element={<div className="container page-pad"><Empty title="That page doesn’t exist" /></div>} />
           </Routes>
         </main>
         <Footer />

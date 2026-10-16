@@ -2,6 +2,7 @@
 // interpreter can replace it. Whatever produces the draft, sanitize() guarantees that only keys and
 // values that exist in the filter registry reach the client, and never claims an unsupported match.
 import type { DB } from '../db'
+import { parseJson } from '../db'
 import { config } from '../config'
 import { OUT_OF_COVERAGE_PLACES } from '../config/coverage'
 import { registry } from './filters'
@@ -11,7 +12,7 @@ export interface InterpretContext {
   activeArea: { slug: string; name: string; district: string }
   comingSoon: { slug: string; name: string }[]
   subAreas: { slug: string; name: string; hasListings: boolean }[]
-  landmarks: { slug: string; name: string }[]
+  landmarks: { slug: string; name: string; kind: string; aliases: string[] }[]
 }
 
 export interface Interpreter {
@@ -20,24 +21,23 @@ export interface Interpreter {
 
 const norm = (s: string) => s.toLowerCase().replace(/[’']/g, "'").replace(/\s+/g, ' ').trim()
 const has = (text: string, re: RegExp) => re.test(text)
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-/** Landmark aliases. Generic words ("college", "IT park") trigger a clarifying question instead. */
-const LANDMARK_ALIASES: [RegExp, string][] = [
-  [/infopark\s*(phase\s*)?(2|ii|two)\b/, 'infopark-phase-2'],
-  [/\binfo\s?park\b/, 'infopark-phase-1'],
-  [/smart\s?city/, 'smartcity-kochi'],
-  [/\b(cochin\s*)?sez\b|special economic zone|\bcsez\b/, 'cochin-sez'],
-  [/rajagiri/, 'rajagiri-valley'],
-  [/\bmec\b|model engineering/, 'model-engineering-college'],
-  [/bharata\s*mata|\bbmc\b/, 'bharata-mata-college'],
-  [/collectorate|civil station/, 'civil-station'],
-  [/kakkanad junction/, 'kakkanad-junction'],
-]
+/**
+ * Find the landmark a query mentions, using names and aliases from the database.
+ * Longer names win, so "infopark phase 2" beats "infopark".
+ */
+function findLandmark(text: string, landmarks: InterpretContext['landmarks']) {
+  const candidates = landmarks
+    .flatMap((l) => [l.name, ...l.aliases].map((n) => ({ slug: l.slug, term: norm(n).replace(/\s*\(.*\)$/, '') })))
+    .sort((a, b) => b.term.length - a.term.length)
+  return candidates.find((c) => new RegExp(`\\b${escapeRe(c.term).replace(/\\? /g, '\\s*')}\\b`).test(text))?.slug ?? null
+}
 
 const UNSUPPORTED: [RegExp, string, string][] = [
   [/\bgym\b|fitness/, 'gym', 'We don’t track gyms yet.'],
   [/swimming|\bpool\b/, 'swimming pool', 'We don’t track pools yet.'],
-  [/\bbeach\b|sea ?view|lake ?view|backwater/, 'views or beach', 'Kakkanad listings don’t record views, and there’s no beach nearby.'],
+  [/\bbeach\b|sea ?view|lake ?view|backwater/, 'views or beach', 'Listings don’t record views or distance to the beach.'],
   [/\bquiet\b|peaceful|calm area|no noise/, 'quiet', 'Noise is subjective, so it isn’t a filter. Resident reviews often mention it.'],
   [/\bpets?\b|\bdogs?\b|\bcats?\b/, 'pets', 'Pet policies aren’t tracked yet.'],
   [/balcony/, 'balcony', 'Balconies aren’t tracked yet.'],
@@ -75,7 +75,7 @@ export const ruleBasedInterpreter: Interpreter = {
     const inArea =
       text.includes(ctx.activeArea.slug) ||
       ctx.subAreas.some((s) => text.includes(s.name.toLowerCase())) ||
-      LANDMARK_ALIASES.some(([re]) => re.test(text))
+      findLandmark(text, ctx.landmarks) !== null
     if (!inArea) {
       const soon = ctx.comingSoon.find((a) => text.includes(a.name.toLowerCase()))
       if (soon) {
@@ -206,20 +206,24 @@ export const ruleBasedInterpreter: Interpreter = {
     if (has(text, /main road|well[- ]lit|lit road/)) f.main_road_within_m = '200'
 
     // ---------- place ----------
-    const landmark = LANDMARK_ALIASES.find(([re]) => re.test(text))
+    const landmark = findLandmark(text, ctx.landmarks)
+    const named = (kind: string) => ctx.landmarks.filter((l) => l.kind === kind).map((l) => l.name)
+    const orList = (xs: string[]) => (xs.length > 1 ? `${xs.slice(0, -1).join(', ')} or ${xs[xs.length - 1]}` : xs[0])
     if (landmark) {
-      f.near_landmark = landmark[1]
+      f.near_landmark = landmark
       const mins = text.match(/(\d{1,2})\s*(?:min|mins|minutes)/)
       const walk = has(text, /walk(ing|able)?/)
       f.commute_mode = walk ? 'walk' : has(text, /\bbus\b/) ? 'bus' : 'auto'
-      f.max_minutes = mins ? String(Math.min(30, Math.max(5, Math.round(Number(mins[1]) / 5) * 5))) : walk ? '15' : '15'
-    } else if (has(text, /near (my )?(college|campus)/)) {
-      ask('Which college? Model Engineering College, Bharata Mata College or Rajagiri Valley?')
-    } else if (has(text, /near (my )?(office|it park|tech park|work)/)) {
-      ask('Which workplace? Infopark Phase 1, Infopark Phase 2, SmartCity or Cochin SEZ?')
+      f.max_minutes = mins ? String(Math.min(30, Math.max(5, Math.round(Number(mins[1]) / 5) * 5))) : '15'
+    } else if (has(text, /near (my )?(college|campus)/) && named('campus').length) {
+      ask(`Which college? ${orList(named('campus'))}?`)
+    } else if (has(text, /near (my )?(office|it park|tech park|work)/) && named('it_park').length) {
+      ask(`Which workplace? ${orList(named('it_park'))}?`)
     }
+    const landmarkTerms = landmark ? ctx.landmarks.filter((l) => l.slug === landmark).flatMap((l) => [l.name, ...l.aliases].map(norm)) : []
     for (const s of ctx.subAreas) {
-      if (text.includes(s.name.toLowerCase()) && !(landmark && s.slug === 'civil-station')) {
+      // "near Civil Station" is a landmark, not also a locality filter.
+      if (text.includes(s.name.toLowerCase()) && !landmarkTerms.some((t) => t.includes(s.name.toLowerCase()))) {
         if (s.hasListings) f.sub_area = f.sub_area ? `${f.sub_area},${s.slug}` : s.slug
         else unsupported.push({ text: s.name, reason: `We don’t have listings in ${s.name} yet.` })
       }
@@ -262,9 +266,11 @@ export function interpretContext(db: DB): InterpretContext {
         )
         .all(config.activeArea) as { slug: string; name: string; has_listings: number }[]
     ).map((s) => ({ slug: s.slug, name: s.name, hasListings: s.has_listings === 1 })),
-    landmarks: db
-      .prepare('SELECT l.slug, l.name FROM landmarks l JOIN areas a ON a.id = l.area_id WHERE a.slug = ?')
-      .all(config.activeArea) as InterpretContext['landmarks'],
+    landmarks: (
+      db
+        .prepare('SELECT l.slug, l.name, l.kind, l.aliases FROM landmarks l JOIN areas a ON a.id = l.area_id WHERE a.slug = ?')
+        .all(config.activeArea) as { slug: string; name: string; kind: string; aliases: string }[]
+    ).map((l) => ({ ...l, aliases: parseJson<string[]>(l.aliases, []) })),
   }
 }
 
@@ -314,7 +320,8 @@ export function sanitize(db: DB, draft: Omit<InterpretResult, 'chips'>): Interpr
       continue
     }
     const labels = value.split(',').map((v) => allowed.get(v)!)
-    chips.push({ key: def.key, value, label: def.kind === 'single' ? `${def.label}: ${labels[0]}` : labels.join(' or ') })
+    const joined = labels.join(' or ')
+    chips.push({ key: def.key, value, label: def.kind === 'single' || !['type', 'gender_policy'].includes(def.key) ? `${def.label}: ${joined}` : joined })
   }
 
   // Anything the draft proposed that the registry doesn't support is reported, never silently applied.

@@ -69,7 +69,7 @@ export const properties: PropertySeed[] = [
     offset: [-0.0014, 0.0018],
     address_line: 'Temple Road side lane, Thrikkakara',
     description:
-      'A three-floor ladies hostel near Model Engineering College and Bharata Mata College, run by a resident matron with an all-women staff. Security is the strictest in this list: a guard at the gate round the clock, cameras across corridors and common areas, and biometric entry. Meals are simple Kerala food, rice and curry at lunch, with fish on most days.',
+      'A three-floor ladies hostel near Model Engineering College and Bharata Mata College, run by a resident matron with an all-women staff. Security is tight: a guard at the gate round the clock, cameras across corridors and common areas, and biometric entry. Meals are simple Kerala food, rice and curry at lunch, with fish on most days.',
     year_established: 2009,
     floors: 3,
     security_deposit: 7500,

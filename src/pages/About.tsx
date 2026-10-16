@@ -21,8 +21,8 @@ const PILLARS = [
 
 const FAQS = [
   {
-    q: 'Does Havenly book or guarantee properties?',
-    a: 'No. Havenly is an information and decision-support platform. You can request bookings through the site, but payments happen directly with the property, and no platform can guarantee safety — always visit in person before paying.',
+    q: 'Does Havenly take bookings or payments?',
+    a: 'No payments, ever. You send a booking request with an itemised estimate. The owner accepts or declines, and if they accept you pay the property directly after visiting. A request never holds a bed until the owner accepts. In this demo, owner responses are simulated.',
   },
   {
     q: 'How does residence verification work?',
@@ -34,11 +34,15 @@ const FAQS = [
   },
   {
     q: 'What does “platform verified” mean?',
-    a: 'A Havenly team member visited the property and checked key claims: address, facilities, charges, and safety arrangements. The date of the last verification is always shown. Unverified properties are labelled clearly.',
+    a: 'A Havenly team member visited and checked specific facts, such as the gate time, CCTV coverage or Wi-Fi speed. Each checked fact is labelled “Verified by Havenly” with its date. Everything else is labelled “Listed by owner”. A place is only called verified when its rules and safety facts have all been checked.',
+  },
+  {
+    q: 'Is this real data?',
+    a: 'Not yet. Every listing and review you see in this demo is a fictional sample, labelled as such. Real listings will be entered by our team after a site visit.',
   },
   {
     q: 'How are safety concerns handled?',
-    a: 'Reports about safety are cross-checked across multiple resident accounts before being highlighted. We never publish allegations as confirmed facts without sufficient corroboration, and moderators can request additional context from reviewers.',
+    a: 'We don’t give places a safety score. We list concrete features (CCTV, guards, a resident warden, distance to the main road) with their source, and publish residents’ safety experiences as personal accounts, never as findings about a property.',
   },
 ]
 
@@ -55,8 +59,7 @@ export default function About() {
           </h1>
           <p className="muted" style={{ fontSize: '1.08rem', marginTop: 18 }}>
             Moving to a new city is hard enough without wondering if the PG you’re about to pay a deposit to is real.
-            Havenly brings verified listings, honest resident experiences, and real comparison tools into one warm,
-            women-focused place.
+            Havenly brings checked listings, honest resident experiences and side-by-side comparison into one calm place, starting with one neighbourhood and doing it properly.
           </p>
         </div>
 
