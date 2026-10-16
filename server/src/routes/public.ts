@@ -28,11 +28,10 @@ export function publicRoutes() {
       if (!active) throw notFound(`The configured area “${config.activeArea}” has no data. Run npm run seed.`)
       const demo = config.demoMode || !!db().prepare(`SELECT 1 FROM properties WHERE data_source = 'demo_seed' LIMIT 1`).get()
       const lm = db()
-        // Landmarks with the most listings within 15 minutes come first.
+        // Featured landmarks (lowest display_order) come first.
         .prepare(
           `SELECT l.name FROM landmarks l JOIN areas a ON a.id = l.area_id WHERE a.slug = ?
-           ORDER BY CASE l.kind WHEN 'it_park' THEN 0 WHEN 'campus' THEN 1 ELSE 2 END,
-             (SELECT COUNT(*) FROM commute c WHERE c.landmark_id = l.id AND c.minutes_auto <= 15) DESC, l.name`,
+           ORDER BY l.display_order, l.name`,
         )
         .all(config.activeArea)
         .map((l: any) => l.name as string)

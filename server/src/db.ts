@@ -14,6 +14,7 @@ export function migrate(db: DB) {
   // Additive column migrations for databases created by an earlier schema.
   const cols = (db.prepare('PRAGMA table_info(landmarks)').all() as { name: string }[]).map((c) => c.name)
   if (!cols.includes('aliases')) db.exec("ALTER TABLE landmarks ADD COLUMN aliases TEXT NOT NULL DEFAULT '[]'")
+  if (!cols.includes('display_order')) db.exec('ALTER TABLE landmarks ADD COLUMN display_order INTEGER NOT NULL DEFAULT 100')
 }
 
 export function openDb(file = config.dbPath): DB {

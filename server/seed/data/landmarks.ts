@@ -9,8 +9,10 @@ export interface LandmarkSeed {
   lat: number
   lng: number
   aliases: string[]
+  display_order: number
 }
 
+let order = 0
 const l = (slug: string, name: string, kind: LandmarkSeed['kind'], lat: number, lng: number, aliases: string[] = []): LandmarkSeed => ({
   id: `lm_${slug.replace(/-/g, '_')}`,
   area_id: 'area_kakkanad',
@@ -20,6 +22,7 @@ const l = (slug: string, name: string, kind: LandmarkSeed['kind'], lat: number, 
   lat,
   lng,
   aliases,
+  display_order: ++order, // listed order = display order: featured landmarks first
 })
 
 export const landmarks: LandmarkSeed[] = [

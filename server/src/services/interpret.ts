@@ -268,7 +268,7 @@ export function interpretContext(db: DB): InterpretContext {
     ).map((s) => ({ slug: s.slug, name: s.name, hasListings: s.has_listings === 1 })),
     landmarks: (
       db
-        .prepare('SELECT l.slug, l.name, l.kind, l.aliases FROM landmarks l JOIN areas a ON a.id = l.area_id WHERE a.slug = ?')
+        .prepare('SELECT l.slug, l.name, l.kind, l.aliases FROM landmarks l JOIN areas a ON a.id = l.area_id WHERE a.slug = ? ORDER BY l.display_order')
         .all(config.activeArea) as { slug: string; name: string; kind: string; aliases: string }[]
     ).map((l) => ({ ...l, aliases: parseJson<string[]>(l.aliases, []) })),
   }

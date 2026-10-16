@@ -216,7 +216,7 @@ function dynamicFilters(db: DB): FilterImpl[] {
     )
     .all(config.activeArea) as FilterOption[]
   const landmarks = db
-    .prepare(`SELECT l.slug AS value, l.name AS label FROM landmarks l JOIN areas a ON a.id = l.area_id WHERE a.slug = ? ORDER BY l.name`)
+    .prepare(`SELECT l.slug AS value, l.name AS label FROM landmarks l JOIN areas a ON a.id = l.area_id WHERE a.slug = ? ORDER BY l.display_order, l.name`)
     .all(config.activeArea) as FilterOption[]
 
   return [
