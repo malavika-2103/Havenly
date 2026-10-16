@@ -32,7 +32,7 @@ const STEPS = [
   {
     n: '01',
     title: 'Search your way',
-    body: 'Type what you actually want — “PG under 15k in Koramangala with food and no strict curfew” — and Havenly reads the intent, not just keywords.',
+    body: 'Type what you actually want — “women’s PG near Infopark under 9000 with food” — and Havenly reads the intent, not just keywords.',
   },
   {
     n: '02',
@@ -50,17 +50,17 @@ const QUOTES = [
   {
     text: 'The hot-water timing on the listing was wrong, and three resident reviews said so before I ever paid a visit. That’s the part no other site showed me.',
     who: 'Priyanka M.',
-    stay: 'Willow House, Koramangala',
+    stay: 'Willow House, Chittethukara',
   },
   {
     text: 'I compared a ₹8.5k hostel and a ₹16k PG side by side — curfew, food, power backup, all of it in one table. Finally chose with my eyes open.',
     who: 'Lakshmi V.',
-    stay: 'Student, Jayanagar',
+    stay: 'Student, Thrikkakara',
   },
   {
     text: 'Reviews here are from people who actually stayed. You can feel the difference in the detail — they mention the caretaker’s name, not just “nice place”.',
     who: 'Aditi W.',
-    stay: 'Casa Amor, Indiranagar',
+    stay: 'Casa Amor, Edachira',
   },
 ]
 

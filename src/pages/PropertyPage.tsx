@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { getProperty, CATEGORY_LABELS } from '../data/properties'
 import Art from '../components/Art'
+import DemoNotice from '../components/DemoNotice'
 import RatingBars from '../components/RatingBars'
 import { useStore } from '../lib/store'
 import {
@@ -99,6 +100,7 @@ export default function PropertyPage() {
         <Link to={`/results?locality=${encodeURIComponent(p.locality)}`}>{p.locality}</Link> <span>/</span>
         <span style={{ color: 'var(--plum)' }}>{p.name}</span>
       </nav>
+      <DemoNotice />
 
       <div className="unit-head">
         <div>

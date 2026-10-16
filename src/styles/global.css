@@ -841,7 +841,7 @@ h3,
 
 .results-layout {
   display: grid;
-  grid-template-columns: 292px 1fr;
+  grid-template-columns: 292px minmax(0, 1fr);
   gap: 30px;
   padding: 34px 0 72px;
   align-items: start;
@@ -1012,7 +1012,7 @@ h3,
 
 .listing {
   display: grid;
-  grid-template-columns: 250px 1fr;
+  grid-template-columns: 250px minmax(0, 1fr);
   gap: 22px;
   background: var(--card);
   border: 1px solid var(--line);
@@ -1059,6 +1059,7 @@ h3,
 .listing-body {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   padding: 4px 4px 0 0;
 }
 
@@ -1123,6 +1124,7 @@ h3,
   margin-top: auto;
   padding-top: 16px;
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-end;
   justify-content: space-between;
   gap: 12px;
@@ -1144,6 +1146,7 @@ h3,
 
 .listing-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 10px;
 }
@@ -2194,7 +2197,7 @@ h3,
   }
 
   .results-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .filter-panel {
@@ -2212,7 +2215,7 @@ h3,
   }
 
   .listing {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .listing-thumb {
@@ -2294,5 +2297,79 @@ h3,
 
   .unit-head {
     flex-direction: column;
+  }
+}
+
+/* ---------- layout guards ---------- */
+.results-layout > section,
+.listing-top > div {
+  min-width: 0;
+}
+
+.listing-title {
+  overflow-wrap: anywhere;
+}
+
+/* ---------- demo + coverage notices ---------- */
+.demo-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.demo-notice-light {
+  color: var(--ink-soft);
+  background: var(--card-2);
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  padding: 8px 12px;
+}
+
+.demo-notice-dark {
+  color: rgba(255, 246, 239, 0.75);
+  margin-top: 28px;
+}
+
+.coverage-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 12px 0 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.results-search {
+  flex-wrap: wrap;
+}
+
+.results-search > div {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .nav-links {
+    display: none;
+  }
+  .navbar-inner {
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 520px) {
+  .searchbox {
+    padding: 6px 6px 6px 14px;
+    gap: 8px;
+  }
+  .searchbox .search-icon {
+    display: none;
+  }
+  .searchbox .btn {
+    padding: 10px 14px;
   }
 }

@@ -16,7 +16,7 @@ Open http://localhost:5173
 
 | Page | Path | What it does |
 | --- | --- | --- |
-| Home | `/` | Conversational search bar (“PG in Koramangala under 15000 with food and no curfew”), explore-by-type cards, top-rated stays, experiences teaser |
+| Home | `/` | Conversational search bar (“Women’s PG near Infopark under 9000 with food”), explore-by-type cards, top-rated stays, experiences teaser |
 | Results | `/results` | Search results with a full filter panel — type, budget, curfew, WiFi, mess/food, garbage disposal, cleaning, room type, ratings, verified-only, AC — plus sort, removable filter chips, and an empty state |
 | Unit page | `/property/:id` | The page that sells the place: photo gallery, at-a-glance tiles, facilities, cost breakdown, house rules, category rating bars, **reported differences** (listing vs resident reports), verified reviews, location, and a sticky **booking card** with live estimate + request modal |
 | Saved | `/saved` | Personal shortlist (persists in localStorage) |
@@ -39,7 +39,7 @@ Warm “cozy” theme using the Havenly palette:
   results page as filters.
 - **Information provenance** — listings separate owner claims, platform verification, and resident
   reports. “Reported differences” are framed as reports, never verdicts.
-- Mock data lives in `src/data/properties.ts` (9 properties across Bengaluru) — swap for an API
+- Mock data lives in `src/data/properties.ts` (temporary; replaced by the API) — swap for an API
   when the backend lands.
 - Property “photos” are palette-matched SVG illustrations so the demo works fully offline.
 

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import DemoNotice from './DemoNotice'
 
 export default function Footer() {
   return (
@@ -10,8 +11,8 @@ export default function Footer() {
               havenly <span className="spark">✦</span>
             </div>
             <p>
-              A calmer way for women to find PGs, hostels and shared rentals — with verified resident reviews,
-              transparent costs, and honest info about what a place is really like.
+              A calmer way to find PGs, hostels and shared rentals when you move to a new city, with resident
+              reviews, transparent costs, and clear labels on who said what.
             </p>
           </div>
           <div>
@@ -36,9 +37,10 @@ export default function Footer() {
             <Link to="/about">Contact us</Link>
           </div>
         </div>
+        <DemoNotice tone="dark" />
         <div className="footer-bottom">
-          <span>© 2026 Havenly · Made with care for women on the move</span>
-          <span>Havenly is an information & decision-support platform — not a booking guarantee of safety.</span>
+          <span>© 2026 Havenly · Now covering Kakkanad, Ernakulam</span>
+          <span>Havenly is an information & decision-support platform. It does not guarantee safety, and it never takes payment.</span>
         </div>
       </div>
     </footer>

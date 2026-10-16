@@ -131,7 +131,7 @@ export default function Results() {
         if (rooms.length || parsed.room) ['single', 'double', 'triple', 'sharing', 'bhk', 'studio'].forEach((w) => covered.add(w))
 
         const residual = parsed.terms.map((t) => t.toLowerCase()).filter((t) => !covered.has(t) && t.length > 2)
-        // residual words (e.g. "quiet", "near metro") match softly — any one match keeps the place in
+        // residual words (e.g. "quiet", "near Infopark") match softly — any one match keeps the place in
         if (residual.length > 0 && !residual.some((w) => hay.includes(w))) return false
       }
       return true

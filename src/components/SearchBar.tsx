@@ -1,6 +1,6 @@
 import { useState, FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Sparkle, X } from './Icons'
+import { Search, Sparkle, X, MapPin } from './Icons'
 import { parseQuery, ParsedIntent } from '../lib/search'
 
 export const intentToParams = (intent: ParsedIntent, raw: string): string => {
@@ -19,10 +19,10 @@ export const intentToParams = (intent: ParsedIntent, raw: string): string => {
 }
 
 const HINTS = [
-  'PG in Koramangala under 15000 with food',
-  'Ladies hostel in Indiranagar with no curfew',
-  'Shared rental in Bengaluru, AC, near metro',
-  'Quiet hostel in Jayanagar, veg mess',
+  "Women's PG near Infopark under 9000 with food",
+  'Hostel in Kakkanad with flexible late entry and Wi-Fi',
+  'Shared rental near SmartCity with attached bathroom',
+  "Working women's hostel in Thrikkakara with 24x7 guard",
 ]
 
 export default function SearchBar({ compact = false, initial = '' }: { compact?: boolean; initial?: string }) {
@@ -50,7 +50,7 @@ export default function SearchBar({ compact = false, initial = '' }: { compact?:
         <input
           value={text}
           onChange={(e) => update(e.target.value)}
-          placeholder="Describe your ideal stay — “PG in Koramangala under 15k with food and no strict curfew”"
+          placeholder="Describe your ideal stay — “women's PG near Infopark under 9k with food and late entry”"
           aria-label="Describe the stay you are looking for"
         />
         {text && (
@@ -62,6 +62,12 @@ export default function SearchBar({ compact = false, initial = '' }: { compact?:
           <Search size={18} /> Search
         </button>
       </form>
+
+      {!compact && (
+        <p className="coverage-note">
+          <MapPin size={14} /> Currently covering Kakkanad, Ernakulam. More areas coming soon.
+        </p>
+      )}
 
       {!compact && intent.chips.length > 0 && (
         <div className="parsed-chips">

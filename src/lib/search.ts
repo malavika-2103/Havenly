@@ -15,31 +15,16 @@ export interface ParsedIntent {
 }
 
 const KNOWN_LOCALITIES: [string, string][] = [
-  ['koramangala', 'Koramangala'],
-  ['indiranagar', 'Indiranagar'],
-  ['hsr', 'HSR Layout'],
-  ['jayanagar', 'Jayanagar'],
-  ['whitefield', 'Whitefield'],
-  ['malleshwaram', 'Malleshwaram'],
-  ['btm', 'BTM Layout'],
-  ['hebbal', 'Hebbal'],
-  ['marathahalli', 'Marathahalli'],
-  ['yelahanka', 'Yelahanka'],
-  ['electronic city', 'Electronic City'],
-  ['kothanur', 'Kothanur'],
+  ['infopark', 'Infopark Road'],
+  ['chittethukara', 'Chittethukara'],
+  ['kusumagiri', 'Kusumagiri'],
+  ['thrikkakara', 'Thrikkakara'],
+  ['edachira', 'Edachira'],
+  ['padamugal', 'Padamugal'],
+  ['vazhakkala', 'Vazhakkala'],
 ]
 
-const KNOWN_CITIES: [string, string][] = [
-  ['bangalore', 'Bengaluru'],
-  ['bengaluru', 'Bengaluru'],
-  ['mumbai', 'Mumbai'],
-  ['delhi', 'Delhi'],
-  ['hyderabad', 'Hyderabad'],
-  ['chennai', 'Chennai'],
-  ['pune', 'Pune'],
-  ['kolkata', 'Kolkata'],
-  ['jaipur', 'Jaipur'],
-]
+const KNOWN_CITIES: [string, string][] = [['kakkanad', 'Kakkanad']]
 
 const BUDGET_WORDS = [
   'under',
