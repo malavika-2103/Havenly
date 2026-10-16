@@ -1,0 +1,165 @@
+// Food as listed by the owner. food_quality_note is the owner's description, never a rating.
+export interface FoodSeed {
+  food_included: 'included' | 'optional' | 'none'
+  meals_per_day: number
+  meal_types: string[]
+  veg_options: 'veg_only' | 'non_veg_allowed' | 'both' | null
+  cuisine_tags: ('kerala' | 'north_indian' | 'south_indian' | 'mixed')[]
+  mess_timing: string | null
+  common_kitchen_hours: string | null
+  self_cooking_allowed: boolean
+  food_quality_note: string | null
+}
+
+const THREE = ['breakfast', 'lunch', 'dinner']
+
+const none = (kitchen: string): FoodSeed => ({
+  food_included: 'none',
+  meals_per_day: 0,
+  meal_types: [],
+  veg_options: null,
+  cuisine_tags: [],
+  mess_timing: null,
+  common_kitchen_hours: kitchen,
+  self_cooking_allowed: true,
+  food_quality_note: null,
+})
+
+export const food: Record<string, FoodSeed> = {
+  'tulsi-nest-womens-pg': {
+    food_included: 'included',
+    meals_per_day: 3,
+    meal_types: THREE,
+    veg_options: 'both',
+    cuisine_tags: ['kerala', 'north_indian'],
+    mess_timing: 'Breakfast 7:30–9:30 · Lunch 12:30–2 · Dinner 7:30–9:30',
+    common_kitchen_hours: null,
+    self_cooking_allowed: false,
+    food_quality_note: 'Kerala and North Indian on alternate days. Fish curry on Wednesdays and Sundays.',
+  },
+  'kayal-house-ladies-hostel': {
+    food_included: 'included',
+    meals_per_day: 3,
+    meal_types: [...THREE, 'evening_snack'],
+    veg_options: 'both',
+    cuisine_tags: ['kerala'],
+    mess_timing: 'Breakfast 7–8:30 · Lunch 12:30–1:30 · Tea 4:30 · Dinner 7:30–8:45',
+    common_kitchen_hours: null,
+    self_cooking_allowed: false,
+    food_quality_note: 'Kerala meals: rice with sambar or fish curry, thoran and pickle. Evening tea with a snack.',
+  },
+  'coconut-grove-coliving': none('Open 24 hours, one kitchen per floor'),
+  'mango-leaf-pg-for-women': {
+    food_included: 'included',
+    meals_per_day: 3,
+    meal_types: THREE,
+    veg_options: 'both',
+    cuisine_tags: ['kerala'],
+    mess_timing: 'Breakfast 7:30–9 · Lunch packed on request · Dinner 7:30–9',
+    common_kitchen_hours: null,
+    self_cooking_allowed: false,
+    food_quality_note: 'Home-style food cooked by the owner’s family. Puttu, appam or idiyappam at breakfast.',
+  },
+  'harbour-line-mens-hostel': {
+    food_included: 'optional',
+    meals_per_day: 3,
+    meal_types: THREE,
+    veg_options: 'both',
+    cuisine_tags: ['kerala', 'north_indian'],
+    mess_timing: 'Breakfast 7–10 · Lunch 12–2:30 · Dinner 7:30–11 for shift workers',
+    common_kitchen_hours: null,
+    self_cooking_allowed: false,
+    food_quality_note: 'Optional mess with a late dinner window for shift workers.',
+  },
+  'nila-womens-hostel': {
+    food_included: 'included',
+    meals_per_day: 3,
+    meal_types: THREE,
+    veg_options: 'both',
+    cuisine_tags: ['kerala'],
+    mess_timing: 'Breakfast 7–8:30 · Lunch 12:30–1:30 · Dinner 7–8:15',
+    common_kitchen_hours: null,
+    self_cooking_allowed: false,
+    food_quality_note: 'Simple Kerala meals. Fish on Fridays.',
+  },
+  'jasmine-court-working-womens-pg': {
+    food_included: 'optional',
+    meals_per_day: 3,
+    meal_types: THREE,
+    veg_options: 'both',
+    cuisine_tags: ['kerala', 'north_indian'],
+    mess_timing: 'Breakfast 7:30–9:30 · Lunch packed · Dinner 7:30–10',
+    common_kitchen_hours: null,
+    self_cooking_allowed: false,
+    food_quality_note: 'Optional mess. Packed lunch for office-goers.',
+  },
+  'palm-shade-mens-hostel': {
+    food_included: 'included',
+    meals_per_day: 3,
+    meal_types: THREE,
+    veg_options: 'both',
+    cuisine_tags: ['kerala', 'mixed'],
+    mess_timing: 'Breakfast 7–9 · Lunch 12:30–2 · Dinner 7:30–9:30',
+    common_kitchen_hours: null,
+    self_cooking_allowed: false,
+    food_quality_note: 'Kerala meals, chicken twice a week.',
+  },
+  'lotus-residency-for-women': {
+    food_included: 'included',
+    meals_per_day: 3,
+    meal_types: THREE,
+    veg_options: 'both',
+    cuisine_tags: ['kerala', 'north_indian'],
+    mess_timing: 'Breakfast 7:30–9:30 · Lunch 12:30–2 · Dinner 7:30–9:30',
+    common_kitchen_hours: null,
+    self_cooking_allowed: false,
+    food_quality_note: 'Rotating weekly menu with chapati at dinner.',
+  },
+  'kaithari-shared-homes': none('Full kitchen in each flat, any time'),
+  'anjili-womens-hostel': {
+    food_included: 'included',
+    meals_per_day: 3,
+    meal_types: THREE,
+    veg_options: 'both',
+    cuisine_tags: ['kerala'],
+    mess_timing: 'Breakfast 7–9 · Lunch 12:30–2 · Dinner 7:30–9',
+    common_kitchen_hours: null,
+    self_cooking_allowed: false,
+    food_quality_note: 'Kerala meals with fish curry on most days.',
+  },
+  'greenline-mens-hostel': {
+    food_included: 'optional',
+    meals_per_day: 3,
+    meal_types: THREE,
+    veg_options: 'both',
+    cuisine_tags: ['kerala', 'north_indian'],
+    mess_timing: 'Breakfast 7–10 · Lunch 12–2:30 · Dinner 7:30–10:30',
+    common_kitchen_hours: null,
+    self_cooking_allowed: false,
+    food_quality_note: 'Optional mess, menu shared weekly.',
+  },
+  'sandalwood-suites-womens-pg': {
+    food_included: 'included',
+    meals_per_day: 3,
+    meal_types: [...THREE, 'evening_snack'],
+    veg_options: 'both',
+    cuisine_tags: ['kerala', 'north_indian', 'south_indian'],
+    mess_timing: 'Breakfast 7–10 · Lunch 12:30–2:30 · Snacks 5 · Dinner 7:30–10',
+    common_kitchen_hours: null,
+    self_cooking_allowed: false,
+    food_quality_note: 'Menu rotates between Kerala, Tamil and North Indian dishes.',
+  },
+  'thenmala-shared-house': none('Kitchen on each floor, any time'),
+  'ixora-ladies-pg': {
+    food_included: 'included',
+    meals_per_day: 3,
+    meal_types: THREE,
+    veg_options: 'veg_only',
+    cuisine_tags: ['kerala', 'south_indian'],
+    mess_timing: 'Breakfast 7–9 · Lunch 12:30–1:45 · Dinner 7:30–9',
+    common_kitchen_hours: null,
+    self_cooking_allowed: false,
+    food_quality_note: 'Pure vegetarian kitchen.',
+  },
+  'rosewood-shared-flats': none('Full kitchen in each flat, any time'),
+}

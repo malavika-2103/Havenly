@@ -4,9 +4,18 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently -k -n api,web -c magenta,green \"npm:dev:server\" \"npm:dev:client\"",
+    "dev:client": "vite",
+    "dev:server": "tsx watch --clear-screen=false server/src/index.ts",
+    "start:server": "tsx server/src/index.ts",
+    "seed": "tsx server/seed/seed.ts",
+    "validate": "tsx server/seed/validate.ts",
+    "purge:demo": "tsx server/seed/purge.ts",
+    "test": "tsx --test server/test/*.test.ts",
+    "typecheck": "tsc --noEmit -p . && tsc --noEmit -p server",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "postinstall": "node -e \"require('fs').existsSync('.env')||require('fs').copyFileSync('.env.example','.env')\""
   },
   "dependencies": {
     "better-sqlite3": "^13.0.3",
