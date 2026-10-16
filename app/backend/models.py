@@ -1,0 +1,123 @@
+"""Input and output shapes for the search service (validated by Pydantic)."""
+from typing import Literal
+
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+SourceType = Literal["owner_listed", "independently_verified", "resident_reported", "unknown"]
+
+# Soft preferences we can actually evaluate, and which review theme feeds each one.
+SOFT_PREFERENCE_THEMES = {
+    "quiet": "noise",
+    "privacy": "privacy",
+    "cleanliness": "cleanliness",
+    "food_quality": "food",
+    "value_for_money": "value",
+}
+# Accepted in the input but no data exists yet, so they are reported as ignored.
+SOFT_PREFERENCES_WITHOUT_DATA = {"commute_convenience"}
+
+# Common alternative names for cities.
+CITY_ALIASES = {"ernakulam": "kochi", "cochin": "kochi", "bangalore": "bengaluru"}
+
+
+# ---------- input ----------
+
+class FoodRequirements(BaseModel):
+    cuisine: list[str] = Field(default_factory=list, description="e.g. ['north_indian']")
+    mandatory: bool = Field(False, description="True = exclude places that don't list this cuisine")
+
+    @field_validator("cuisine")
+    @classmethod
+    def normalise(cls, v: list[str]) -> list[str]:
+        return [c.strip().lower().replace(" ", "_").replace("-", "_") for c in v if c.strip()]
+
+
+class SearchCriteria(BaseModel):
+    city: str = Field(..., description="City name, e.g. 'Kochi' (Ernakulam and Cochin also accepted)")
+    locality: str | None = None
+    min_rent: int | None = Field(None, ge=0)
+    max_rent: int | None = Field(None, ge=0, description="Monthly rent ceiling in rupees")
+    accommodation_type: Literal["PG", "hostel", "shared_rental"] | None = None
+    room_type: Literal["single", "double", "triple", "dormitory"] | None = None
+    women_only: bool | None = Field(None, description="True = only places explicitly listed as women-only")
+    required_amenities: list[str] = Field(default_factory=list)
+    food_requirements: FoodRequirements | None = None
+    soft_preferences: dict[str, float] = Field(default_factory=dict, description="Weights 0-1, e.g. {'quiet': 1}")
+    limit: int = Field(10, ge=1, le=20)
+
+    @field_validator("city")
+    @classmethod
+    def city_not_empty(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("city is required")
+        return v
+
+    @field_validator("soft_preferences")
+    @classmethod
+    def weights_in_range(cls, v: dict[str, float]) -> dict[str, float]:
+        for name, weight in v.items():
+            if not 0 <= weight <= 1:
+                raise ValueError(f"soft preference '{name}' must be between 0 and 1")
+        return {k.strip().lower(): w for k, w in v.items()}
+
+    @model_validator(mode="after")
+    def rent_range_valid(self):
+        if self.min_rent is not None and self.max_rent is not None and self.min_rent > self.max_rent:
+            raise ValueError("min_rent cannot be greater than max_rent")
+        return self
+
+
+# ---------- output ----------
+
+class Location(BaseModel):
+    city: str
+    locality: str | None
+
+
+class AdditionalCost(BaseModel):
+    label: str
+    amount: int | None
+    frequency: str
+    source_type: SourceType
+
+
+class ReviewSummary(BaseModel):
+    average_rating: float | None
+    review_count: int
+    verified_resident_count: int
+
+
+class SearchResult(BaseModel):
+    property_id: str
+    name: str
+    location: Location
+    property_type: str
+    monthly_rent: int
+    room_type: str
+    deposit: int | None
+    additional_costs: list[AdditionalCost]
+    score: float | None
+    match_reasons: list[str]
+    mismatches: list[str]
+    missing_information: list[str]
+    conflicting_reports: list[str]
+    provenance: dict[str, SourceType]
+    verification_status: Literal["verified", "partially_verified", "unverified"]
+    verified_scopes: list[str]
+    review_summary: ReviewSummary
+    is_synthetic: bool
+
+
+class SearchMetadata(BaseModel):
+    hard_filters_applied: list[str]
+    soft_preferences_evaluated: list[str]
+    unsupported_preferences_ignored: list[str]
+    excluded_because_unknown: list[str] = []
+    suggestions: list[str] = []
+
+
+class SearchResponse(BaseModel):
+    results: list[SearchResult]
+    total_matching: int
+    search_metadata: SearchMetadata
