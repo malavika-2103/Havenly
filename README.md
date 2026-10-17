@@ -36,8 +36,22 @@ This **wipes and rebuilds** all tables every time.
 
 Seed data: 17 **synthetic** Ernakulam/Kochi properties. Localities and landmarks are real, but all property names, prices, rules and reviews are invented. All verifications are simulated.
 
+## MCP server
+```powershell
+python -m app.mcp_server.server          # Streamable HTTP at http://127.0.0.1:8000/mcp
+python -m app.mcp_server.server --stdio  # stdio
+```
+Tools: `search_properties`.
+
+## MCP Inspector
+Needs Node.js 22.19+. In a second terminal:
+```powershell
+npx @modelcontextprotocol/inspector
+```
+Choose transport **Streamable HTTP**, URL `http://127.0.0.1:8000/mcp`, Connect, then Tools -> List Tools.
+
 ## Environment variables
 See `.env.example`. Never commit `.env`.
 
 ## Known limitations
-No backend search or MCP server yet. Seed data is fictional.
+Only search_properties exists. No authentication yet (local only). Seed data is fictional.

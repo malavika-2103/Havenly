@@ -4,9 +4,14 @@
 - Phase 0: Environment (Windows, VS Code, Python 3.14, Git, PostgreSQL 18)
 - Phase 1: Project setup
 - Phase 2: Database schema + 17 synthetic Ernakulam properties
+- Phase 3: Backend search service (36 tests)
 
 ## Current phase
-- Phase 3: Backend search service
+- Phase 4: MCP server + search_properties
+
+## Files added in Phase 4
+- app/mcp_server/server.py - MCPServer (mcp SDK 2.3) exposing search_properties
+- tests/test_mcp_server.py - 5 tests through a real MCP client
 
 ## Files added in Phase 3
 - app/backend/errors.py - structured HavenlyError (code, message, recovery)
@@ -27,13 +32,15 @@
 ## Commands that work
 - python scripts\init_db.py
 - python scripts\demo_search.py
+- python -m app.mcp_server.server  (http://127.0.0.1:8000/mcp)
+- npx @modelcontextprotocol/inspector
 - pytest
 
 ## Tests passed
-- 36 total (verify on your machine)
+- 41 total (verify on your machine)
 
 ## Known bugs
 - None yet
 
 ## Next action
-- Phase 4: MCP server + search_properties tool, tested with MCP Inspector
+- Phase 5: get_property, get_reviews, compare_properties

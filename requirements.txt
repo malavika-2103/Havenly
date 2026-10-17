@@ -4,3 +4,5 @@ python-dotenv>=1.0,<2
 pytest>=8.0,<9
 # Phase 2: PostgreSQL driver (binary = no compiler needed on Windows)
 psycopg[binary]>=3.2,<4
+# Phase 4: official MCP Python SDK (v2 - FastMCP is now MCPServer)
+mcp>=2.3,<3
