@@ -29,6 +29,7 @@ Every fact Havenly returns carries a source label, missing information is report
 17. [Troubleshooting](#troubleshooting)
 18. [Known limitations](#known-limitations)
 19. [Roadmap](#roadmap)
+20. [Team](#team)
 
 ---
 
@@ -407,3 +408,14 @@ Not yet implemented (required before any public deployment): authentication on t
 - Authentication and rate limiting for the MCP endpoint
 - FastAPI REST layer and a web frontend that reuse the same backend
 - Real, independently verified listings
+
+## Team
+
+| Member | Role | Owns in this repo |
+| --- | --- | --- |
+| **Malavika** | Project lead, AI and search | Architecture, MCP server and tool design (`app/mcp_server/server.py`), search ranking rules (`app/backend/search_service.py`), AI client integration |
+| **Adwaitha** | Frontend and design | MCP Inspector setup and demo flow, tool descriptions and response wording shown to AI clients, alignment with the web app UI |
+| **Sagnika** | Backend and data | PostgreSQL schema (`app/db/schema.sql`), Ernakulam seed data (`app/db/seed_data.py`), database scripts (`scripts/init_db.py`), input and output models (`app/backend/models.py`) |
+| **June** | Quality, security and docs | Test suites (`tests/`), security review (input limits, SQL safety, timeouts, dependency audit), this README and `PROGRESS.md` |
+
+Everyone reviews changes outside their own area before they are merged.
