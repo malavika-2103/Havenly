@@ -37,10 +37,10 @@
 - pytest
 
 ## Tests passed
-- 41 total (verify on your machine)
+- 54 total (41 functional + 13 security regression tests)
 
 ## Known bugs
-- None yet
+- None open. Security pass (2026-10-17): fixed LIKE wildcard injection, unbounded input sizes (DB DoS), NUL bytes surfacing as DATABASE_ERROR; added statement and connect timeouts; pytest bumped to 9.0.3 (PYSEC-2026-1845).
 
 ## Next action
 - Phase 5: get_property, get_reviews, compare_properties

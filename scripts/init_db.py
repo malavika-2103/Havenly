@@ -92,7 +92,7 @@ def print_summary(cur) -> None:
     for table in ["properties", "property_locations", "room_options", "additional_costs", "amenities",
                   "property_amenities", "food_arrangements", "accommodation_rules",
                   "property_verifications", "reviews", "review_themes"]:
-        cur.execute(f"SELECT count(*) FROM {table}")
+        cur.execute(f"SELECT count(*) FROM {table}")  # nosec B608 - hardcoded table list
         print(f"  {table:<24} {cur.fetchone()[0]}")
 
     print("\nAll properties (cheapest room each):")

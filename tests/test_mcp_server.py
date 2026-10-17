@@ -71,3 +71,15 @@ def test_no_results_is_not_an_error():
     assert not result.is_error
     assert result.structured_content["results"] == []
     assert result.structured_content["search_metadata"]["suggestions"]
+
+
+def test_control_characters_are_invalid_argument_not_database_error():
+    result = call("search_properties", {"city": "Ko\x00chi"})
+    assert result.is_error
+    assert "INVALID_ARGUMENT" in result.content[0].text
+
+
+def test_oversized_amenity_list_rejected_quickly():
+    result = call("search_properties", {"city": "Kochi", "required_amenities": ["wifi"] * 10000})
+    assert result.is_error
+    assert "INVALID_ARGUMENT" in result.content[0].text

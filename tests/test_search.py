@@ -189,3 +189,33 @@ def test_database_failure_is_structured(monkeypatch):
         kochi()
     assert err.value.code == "DATABASE_ERROR"
     assert "simulated" not in err.value.message  # internal details not leaked
+
+
+# ---------- security: input limits and safe matching ----------
+
+def test_like_wildcards_match_literally():
+    assert kochi(locality="%").total_matching == 0
+    assert kochi(locality="_").total_matching == 0
+
+
+def test_sql_injection_attempt_matches_nothing():
+    assert search(SearchCriteria(city="Kochi' OR 1=1 --")).total_matching == 0
+
+
+@pytest.mark.parametrize("kwargs", [
+    {"city": "K" * 101},
+    {"city": "Kochi", "locality": "x" * 101},
+    {"city": "Kochi", "required_amenities": ["wifi"] * 21},
+    {"city": "Kochi", "food_requirements": {"cuisine": ["kerala"] * 21}},
+    {"city": "Kochi", "soft_preferences": {f"p{i}": 1 for i in range(21)}},
+    {"city": "Kochi", "soft_preferences": {"q" * 101: 1}},
+    {"city": "Ko\x00chi"},
+    {"city": "Kochi", "locality": "Kakka\x00nad"},
+])
+def test_oversized_or_control_char_input_rejected(kwargs):
+    with pytest.raises(ValidationError):
+        SearchCriteria(**kwargs)
+
+
+def test_duplicate_amenities_are_collapsed():
+    assert SearchCriteria(city="Kochi", required_amenities=["WiFi", "wifi ", ""]).required_amenities == ["wifi"]

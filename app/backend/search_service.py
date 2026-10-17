@@ -21,6 +21,8 @@ POOR = 0.4
 # Unverified reviews count half as much as verified-resident reviews.
 UNVERIFIED_WEIGHT = 0.5
 ALL_VERIFICATION_SCOPES = {"existence", "rent", "amenities", "food", "rules"}
+# Upper limit for one search's database work, in milliseconds.
+STATEMENT_TIMEOUT_MS = 5000
 
 PREFERENCE_LABELS = {
     "quiet": "quiet environment", "privacy": "privacy", "cleanliness": "cleanliness",
@@ -39,8 +41,10 @@ def _where(c: SearchCriteria, city: str, women_clause: str | None) -> tuple[str,
     params: list = [city]
 
     if c.locality:
+        # Escape LIKE wildcards so '%' or '_' in the input match literally, not "anything".
+        escaped = c.locality.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
         clauses.append("l.locality ILIKE %s")
-        params.append(f"%{c.locality.strip()}%")
+        params.append(f"%{escaped}%")
     if c.accommodation_type:
         clauses.append("p.property_type = %s")
         params.append(c.accommodation_type)
@@ -57,7 +61,7 @@ def _where(c: SearchCriteria, city: str, women_clause: str | None) -> tuple[str,
     if c.min_rent is not None:
         room.append("r.monthly_rent >= %s")
         params.append(c.min_rent)
-    clauses.append(f"EXISTS (SELECT 1 FROM room_options r WHERE {' AND '.join(room)})")
+    clauses.append(f"EXISTS (SELECT 1 FROM room_options r WHERE {' AND '.join(room)})")  # nosec B608 - fixed clauses
 
     for amenity in c.required_amenities:
         clauses.append("EXISTS (SELECT 1 FROM property_amenities a WHERE a.property_id = p.id "
@@ -306,11 +310,14 @@ def search(criteria: SearchCriteria) -> SearchResponse:
 
     try:
         with get_connection() as conn, conn.cursor() as cur:
+            # Cap how long any one search may run, so a slow query cannot tie up the database.
+            cur.execute(f"SET LOCAL statement_timeout = {STATEMENT_TIMEOUT_MS}")  # nosec B608 - constant, not user input
+            # WHERE is built only from fixed clauses in _where(); every user value is a %s parameter.
             cur.execute(
-                f"""SELECT p.id, p.name, p.property_type, p.women_only, p.women_only_source::text,
-                           p.is_synthetic, l.city, l.locality
-                    FROM properties p JOIN property_locations l ON l.property_id = p.id
-                    WHERE {where}""",
+                "SELECT p.id, p.name, p.property_type, p.women_only, p.women_only_source::text, "
+                "p.is_synthetic, l.city, l.locality "
+                "FROM properties p JOIN property_locations l ON l.property_id = p.id "
+                f"WHERE {where}",  # nosec B608
                 params,
             )
             rows = cur.fetchall()
@@ -319,7 +326,7 @@ def search(criteria: SearchCriteria) -> SearchResponse:
             if criteria.women_only:
                 # Tell the user about places that might qualify but don't state women-only status.
                 unk_where, unk_params = _where(criteria, city, "p.women_only IS NULL")
-                cur.execute(f"SELECT p.name FROM properties p JOIN property_locations l "
+                cur.execute(f"SELECT p.name FROM properties p JOIN property_locations l "  # nosec B608 - fixed clauses, values are %s params
                             f"ON l.property_id = p.id WHERE {unk_where} ORDER BY p.name", unk_params)
                 excluded = [f"{n} (women-only status not stated)" for (n,) in cur.fetchall()]
 

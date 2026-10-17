@@ -24,4 +24,5 @@ def get_database_url() -> str:
 
 
 def get_connection() -> psycopg.Connection:
-    return psycopg.connect(get_database_url())
+    # connect_timeout: fail fast with a clear error instead of hanging when PostgreSQL is down.
+    return psycopg.connect(get_database_url(), connect_timeout=10)
