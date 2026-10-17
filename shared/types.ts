@@ -380,3 +380,24 @@ export interface LoginResponse {
   token: string
   user: DemoUser
 }
+
+// ---------- live web results (Tavily) ----------
+
+/** One page found on the open web. Nothing in it has been checked by Havenly. */
+export interface WebResult {
+  title: string
+  url: string
+  domain: string
+  snippet: string
+}
+
+export interface WebResultsResponse {
+  /** The exact query sent to the web search provider. */
+  query: string
+  results: WebResult[]
+  source: 'tavily'
+  /** Always true: web results are never verified and never mixed into Havenly listings. */
+  unverified: true
+  notice: string
+  fetched_at: string
+}

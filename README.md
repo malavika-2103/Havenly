@@ -20,11 +20,11 @@ npm run dev      # API on :8787 and the web app on http://localhost:5173 (Vite p
 | --- | --- |
 | `npm run seed` | Deterministic, idempotent seed. Re-running replaces all demo rows with identical data. **Use it to reset before a pitch.** |
 | `npm run validate` | 93 data checks (quotas, consistency between reviews and listings, area scope, provenance, owner privacy over the live API). Prints PASS/FAIL, exits 1 on failure. |
-| `npm test` | 27 API tests on a throwaway database (filters, coverage, compare cap, estimates, booking rules, privacy). |
+| `npm test` | 37 API tests on a throwaway database (filters, coverage, compare cap, estimates, booking rules, privacy, body errors, live web results with Tavily mocked). |
 | `npm run purge:demo` | Removes every `demo_seed` row in one transaction. Data from real users and manually verified data stays. |
 | `npm run typecheck` | Type-checks client and server. |
 
-`.env` keys: `PORT`, `ACTIVE_AREA` (default `kakkanad`), `ADMIN_TOKEN` (default `havenly-admin-demo`), `TOKEN_SECRET`, `DB_PATH`, `DEMO_MODE`, `BOOKING_EXPIRY_HOURS`.
+`.env` keys: `PORT`, `HOST` (default `127.0.0.1`, only this computer; use `0.0.0.0` when deploying), `ACTIVE_AREA` (default `kakkanad`), `ADMIN_TOKEN` (default `havenly-admin-demo`), `TOKEN_SECRET`, `DB_PATH`, `DEMO_MODE`, `BOOKING_EXPIRY_HOURS`, `TAVILY_API_KEY` (optional, turns on live web results; see below).
 
 ## Pitch walkthrough (about 3 minutes)
 
@@ -88,6 +88,7 @@ See [docs/API.md](docs/API.md) for every endpoint with curl examples. Summary:
 | POST | `/api/residency` | Auth. Request residency verification (no file stored) |
 | GET | `/api/compare?ids=a,b,c` | Max 3; aligned rows with `differs`, `best_index`, `sources` |
 | POST | `/api/search/interpret` | `{query}` → `{filters, chips, unsupported, clarification, out_of_coverage}` |
+| GET | `/api/search/web?q=` | Live, unverified web links from Tavily for the same search. `503 WEB_SEARCH_DISABLED` when no key is set. |
 | POST | `/api/properties/:slug/estimate` | `{room_type, move_in_date, duration_months, include_mess}` |
 | POST | `/api/bookings` | Auth. `Idempotency-Key` header. 409 `ROOM_FULL` / `DUPLICATE_REQUEST` |
 | GET | `/api/bookings` · `/api/bookings/:reference` | Auth. Your requests |
@@ -97,6 +98,39 @@ See [docs/API.md](docs/API.md) for every endpoint with curl examples. Summary:
 | GET / PUT | `/api/saved` | Auth. Server-side saved places |
 | POST | `/api/auth/demo-login` · GET `/api/auth/me` | Demo auth |
 | * | `/api/admin/*` | `X-Admin-Token` required. Properties and rooms CRUD, provenance, verification and residency queue, review moderation, booking queue, waitlists, purge |
+
+## Live web results (Tavily)
+
+When someone searches with the search bar, the results page also shows a **From the web** section below Havenly's own listings. It holds live links from a [Tavily](https://tavily.com) web search, scoped to accommodation in the active area.
+
+Turn it on by adding your key to `.env`, then restart `npm run dev` (the server reads `.env` only at startup):
+
+```
+TAVILY_API_KEY=tvly-...
+```
+
+Without a key the endpoint answers `503 WEB_SEARCH_DISABLED` and the section says live web results are off. Nothing else changes.
+
+How it stays honest and safe:
+
+- Web results are **never** mixed into, ranked with, or styled like Havenly listings. They sit in a separate dashed panel labelled **Unverified**, with a warning not to pay a deposit before visiting.
+- The key stays on the server (sent to Tavily in an `Authorization` header) and never reaches the browser or an error message.
+- Only `http`/`https` links are shown; titles and snippets are clipped to 300 characters; links open in a new tab with `rel="noopener noreferrer nofollow ugc"`.
+- Queries are 2-200 characters. Identical searches are cached for 10 minutes and each client is limited to 20 web searches a minute, to save Tavily credits.
+- Tavily failures return `502 WEB_SEARCH_FAILED` (or `WEB_SEARCH_KEY_INVALID` for a rejected key) after an 8-second timeout, without exposing the provider's response.
+
+Code: `server/src/services/webSearch.ts`, route in `server/src/routes/public.ts`, UI in `src/components/WebResults.tsx`.
+
+## Team
+
+| Member | Role | Owns |
+| --- | --- | --- |
+| **Malavika** | Project lead, AI and search | Product scope and architecture, natural-language search (`server/src/services/interpret.ts`), live web results with Tavily (`server/src/services/webSearch.ts`, `src/components/WebResults.tsx`), the companion MCP server repo |
+| **Adwaitha** | Frontend and design | Design system and brand (`src/styles/`, favicon), all pages in `src/pages/`, components in `src/components/` (navbar, search bar, filters, property cards, compare view), typed API client (`src/lib/api.ts`) |
+| **Sagnika** | Backend and data | Express API (`server/src/app.ts`, `server/src/routes/`), SQLite schema (`server/src/schema.sql`), Kakkanad seed data (`server/seed/`), booking requests, estimates and waitlists (`server/src/services/bookings.ts`, `estimate.ts`), admin queues |
+| **June** | Quality, security and docs | API test suite (`server/test/api.test.ts`), data validator (`server/seed/validate.ts`), security review (input limits, request-body errors, local-only dev servers, dependency audit), README and `docs/`, pitch walkthrough |
+
+Shared: everyone reviews pull requests outside their own area, and the trust rules below are owned by the whole team.
 
 ## Rules the code enforces
 

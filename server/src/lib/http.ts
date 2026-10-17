@@ -37,6 +37,16 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     res.status(err.status).json({ error: { code: err.code, message: err.message, details: err.details } })
     return
   }
+  // express.json() rejects bad bodies with a client-error status; report those as 4xx, not a server crash.
+  const type = (err as { type?: string } | null)?.type
+  if (type === 'entity.parse.failed') {
+    res.status(400).json({ error: { code: 'INVALID_JSON', message: 'The request body is not valid JSON.' } })
+    return
+  }
+  if (type === 'entity.too.large') {
+    res.status(413).json({ error: { code: 'BODY_TOO_LARGE', message: 'The request body is too large.' } })
+    return
+  }
   console.error(err)
   res.status(500).json({ error: { code: 'INTERNAL', message: 'Something went wrong on our side. Please try again.' } })
 }

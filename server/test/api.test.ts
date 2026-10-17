@@ -348,3 +348,127 @@ describe('privacy and honesty', () => {
     seed() // restore for any later test
   })
 })
+
+describe('request body errors', () => {
+  test('malformed JSON is a 400, not a server error', async () => {
+    const res = await fetch(base + '/api/search/interpret', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{bad',
+    })
+    assert.equal(res.status, 400)
+    assert.equal(((await res.json()) as any).error.code, 'INVALID_JSON')
+  })
+
+  test('a body over the size limit is a 413', async () => {
+    const res = await fetch(base + '/api/search/interpret', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query: 'a'.repeat(200_000) }),
+    })
+    assert.equal(res.status, 413)
+    assert.equal(((await res.json()) as any).error.code, 'BODY_TOO_LARGE')
+  })
+})
+
+describe('live web results (Tavily)', async () => {
+  const { config } = await import('../src/config')
+  const web = await import('../src/services/webSearch')
+  const realKey = config.tavilyApiKey
+  let calls: { url: string; init: RequestInit }[] = []
+  let reply: () => Response | Promise<Response> = () => new Response('{}')
+
+  after(() => {
+    config.tavilyApiKey = realKey
+  })
+  const reset = (key = 'tvly-test-key') => {
+    config.tavilyApiKey = key
+    calls = []
+    web.setWebFetchForTests((async (url: string, init: RequestInit) => {
+      calls.push({ url: String(url), init })
+      return reply()
+    }) as typeof fetch)
+    web.resetWebRateLimitForTests()
+  }
+  const tavily = (results: unknown[], status = 200) => () => new Response(JSON.stringify({ results }), { status })
+
+  test('is off (503) without an API key, and never calls out', async () => {
+    reset('')
+    const r = await get('/api/search/web?q=womens+pg')
+    assert.equal(r.status, 503)
+    assert.equal(r.body.error.code, 'WEB_SEARCH_DISABLED')
+    assert.equal(calls.length, 0)
+  })
+
+  test('sends a scoped query with the key in a header, and labels results unverified', async () => {
+    reset()
+    reply = tavily([{ title: 'Ladies PG near Infopark', url: 'https://example.com/pg', content: 'Rooms from 7000' }])
+    const r = await get('/api/search/web?q=women%27s+PG+near+Infopark')
+    assert.equal(r.status, 200)
+    assert.equal(calls.length, 1)
+    assert.equal(calls[0].url, 'https://api.tavily.com/search')
+    assert.equal(new Headers(calls[0].init.headers).get('Authorization'), 'Bearer tvly-test-key')
+    const sent = JSON.parse(String(calls[0].init.body))
+    assert.match(sent.query, /women's PG near Infopark/)
+    assert.match(sent.query, /Kakkanad/)
+    assert.ok(!String(calls[0].init.body).includes('tvly-test-key'), 'key must not be in the body')
+    assert.equal(r.body.unverified, true)
+    assert.equal(r.body.source, 'tavily')
+    assert.match(r.body.notice, /not checked/)
+    assert.deepEqual(r.body.results[0], { title: 'Ladies PG near Infopark', url: 'https://example.com/pg', domain: 'example.com', snippet: 'Rooms from 7000' })
+  })
+
+  test('drops unsafe or broken links, duplicates, and clips long text', async () => {
+    reset()
+    reply = tavily([
+      { title: 'xss', url: 'javascript:alert(1)', content: 'x' },
+      { title: 'data', url: 'data:text/html,hi', content: 'x' },
+      { title: 'broken', url: 'not a url', content: 'x' },
+      { title: 'ok', url: 'https://www.site.in/a', content: 'y'.repeat(1000) },
+      { title: 'dup', url: 'https://www.site.in/a', content: 'z' },
+    ])
+    const r = await get('/api/search/web?q=hostel')
+    assert.equal(r.body.results.length, 1)
+    assert.equal(r.body.results[0].domain, 'site.in')
+    assert.ok(r.body.results[0].snippet.length <= 300)
+  })
+
+  test('repeat searches are served from cache', async () => {
+    reset()
+    reply = tavily([{ title: 'a', url: 'https://a.com', content: '' }])
+    await get('/api/search/web?q=cached+query')
+    await get('/api/search/web?q=Cached%20Query')
+    assert.equal(calls.length, 1)
+  })
+
+  test('a rejected key is a clear 502 that does not echo the key', async () => {
+    reset()
+    reply = () => new Response('{"detail":"Unauthorized: tvly-test-key"}', { status: 401 })
+    const r = await get('/api/search/web?q=pg+one')
+    assert.equal(r.status, 502)
+    assert.equal(r.body.error.code, 'WEB_SEARCH_KEY_INVALID')
+    assert.ok(!r.text.includes('tvly-test-key'))
+  })
+
+  test('a network failure is a 502, not a crash', async () => {
+    reset()
+    reply = () => {
+      throw new Error('ECONNRESET')
+    }
+    const r = await get('/api/search/web?q=pg+two')
+    assert.equal(r.status, 502)
+    assert.equal(r.body.error.code, 'WEB_SEARCH_FAILED')
+  })
+
+  test('empty and oversized queries are rejected before any call', async () => {
+    reset()
+    assert.equal((await get('/api/search/web?q=')).status, 400)
+    assert.equal((await get('/api/search/web?q=' + 'a'.repeat(201))).status, 400)
+    assert.equal(calls.length, 0)
+  })
+
+  test('rate limits each client', async () => {
+    reset()
+    reply = tavily([])
+    let last = 0
+    for (let i = 0; i < 21; i++) last = (await get(`/api/search/web?q=query+${i}`)).status
+    assert.equal(last, 429)
+  })
+})

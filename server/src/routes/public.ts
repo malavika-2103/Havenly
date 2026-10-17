@@ -10,7 +10,8 @@ import { createReview, listReviews, reportReview, voteHelpful } from '../service
 import { interpretQuery } from '../services/interpret'
 import { computeEstimate, validateEstimateInput } from '../services/estimate'
 import { cancelBooking, createBooking, getBooking, joinWaitlist, listBookings } from '../services/bookings'
-import type { Meta } from '../../../shared/types'
+import { checkWebRateLimit, searchWeb } from '../services/webSearch'
+import type { AreaInfo, Meta } from '../../../shared/types'
 
 export const DEMO_NOTICE = 'Demo data for presentation. Listings and reviews are fictional samples.'
 
@@ -93,6 +94,17 @@ export function publicRoutes() {
   r.get('/compare', route((req) => compareProperties(db(), String(req.query.ids ?? ''))))
 
   r.post('/search/interpret', route((req) => interpretQuery(db(), String(req.body?.query ?? ''))))
+
+  // Live, unverified web links for the same search. Kept separate from /properties on purpose.
+  r.get(
+    '/search/web',
+    route((req) => {
+      checkWebRateLimit(req.ip ?? 'unknown')
+      const area = db().prepare('SELECT slug, name, district, state, status FROM areas WHERE slug = ?').get(config.activeArea) as AreaInfo | undefined
+      if (!area) throw notFound(`The configured area “${config.activeArea}” has no data. Run npm run seed.`)
+      return searchWeb(req.query.q, area)
+    }),
+  )
 
   r.post('/properties/:slug/estimate', route((req) => computeEstimate(db(), req.params.slug, validateEstimateInput(req.body))))
 

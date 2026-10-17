@@ -6,6 +6,7 @@ import FilterPanel from '../components/FilterPanel'
 import FilterChips from '../components/FilterChips'
 import InterpretNotes, { OutOfCoverage } from '../components/InterpretNotes'
 import { Loading, ErrorState, Empty } from '../components/States'
+import WebResults from '../components/WebResults'
 import { api } from '../lib/api'
 import { useAsync, useStore } from '../lib/store'
 import { chipsFor, toSearch, valuesFromParams } from '../lib/filters'
@@ -109,6 +110,7 @@ export default function Results() {
               )}
             </>
           )}
+          <WebResults query={say} />
         </section>
       </div>
     </>

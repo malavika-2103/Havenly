@@ -4,7 +4,6 @@ import { Search } from './Icons'
 import { useStore } from '../lib/store'
 
 const LINKS = [
-  ['/', 'Home'],
   ['/experiences', 'Experiences'],
   ['/saved', 'Saved'],
   ['/compare', 'Compare'],
@@ -33,7 +32,7 @@ export default function Navbar() {
 
         <nav className="nav-links" aria-label="Main">
           {LINKS.map(([to, label]) => (
-            <NavLink key={to} to={to} end={to === '/'} className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
+            <NavLink key={to} to={to} className={({ isActive }) => `nav-link${isActive ? ' active' : ''}`}>
               {label}
               {count(to) > 0 && <span className="nav-count">{count(to)}</span>}
             </NavLink>
@@ -57,7 +56,7 @@ export default function Navbar() {
               <Link role="menuitem" to="/requests">
                 My booking requests
               </Link>
-              {LINKS.slice(1).map(([to, label]) => (
+              {LINKS.map(([to, label]) => (
                 <Link role="menuitem" key={to} to={to} className="menu-mobile-only">
                   {label}
                   {count(to) > 0 ? ` (${count(to)})` : ''}

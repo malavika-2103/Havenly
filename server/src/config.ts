@@ -9,6 +9,8 @@ const bool = (v: string | undefined, fallback: boolean) => (v === undefined ? fa
 
 export const config = {
   port: Number(process.env.PORT ?? 8787),
+  /** Local only by default. Set HOST=0.0.0.0 when deploying behind a proxy (and change ADMIN_TOKEN). */
+  host: process.env.HOST ?? '127.0.0.1',
   /** The single launch area. Everything area-specific is read from the database using this slug. */
   activeArea: process.env.ACTIVE_AREA ?? 'kakkanad',
   adminToken: process.env.ADMIN_TOKEN ?? 'havenly-admin-demo',
@@ -18,4 +20,6 @@ export const config = {
   bookingExpiryHours: Number(process.env.BOOKING_EXPIRY_HOURS ?? 72),
   maxMoveInDays: 90,
   maxCompare: 3,
+  /** Live web results on the search page. Empty = feature off (endpoint answers 503, UI hides the section). */
+  tavilyApiKey: (process.env.TAVILY_API_KEY ?? '').trim(),
 }

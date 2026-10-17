@@ -13,6 +13,7 @@ import type {
   PropertyListResponse,
   PropertySummary,
   ReviewListResponse,
+  WebResultsResponse,
 } from '../../shared/types'
 
 export class ApiError extends Error {
@@ -97,6 +98,7 @@ export const api = {
   report: (id: string, reason: string) => post<{ message: string }>(`/reviews/${id}/report`, { reason }),
   compare: (slugs: string[]) => request<CompareResponse>(`/compare?ids=${slugs.map(encodeURIComponent).join(',')}`),
   interpret: (query: string, signal?: AbortSignal) => post<InterpretResult>('/search/interpret', { query }, { signal }),
+  webResults: (q: string, signal?: AbortSignal) => request<WebResultsResponse>(`/search/web${toQuery({ q })}`, { signal }),
   estimate: (slug: string, input: EstimateInput, signal?: AbortSignal) => post<Estimate>(`/properties/${encodeURIComponent(slug)}/estimate`, input, { signal }),
   createBooking: (body: EstimateInput & { property_slug: string; note?: string }, idempotencyKey: string) =>
     post<{ booking: BookingRequest; replayed: boolean }>('/bookings', body, { headers: { 'Idempotency-Key': idempotencyKey } }),
