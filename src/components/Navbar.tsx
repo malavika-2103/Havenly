@@ -11,7 +11,7 @@ const LINKS = [
 ] as const
 
 export default function Navbar() {
-  const { saved, compare, user, resetUser } = useStore()
+  const { saved, compare, user } = useStore()
   const [menu, setMenu] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const location = useLocation()
@@ -62,12 +62,6 @@ export default function Navbar() {
                   {count(to) > 0 ? ` (${count(to)})` : ''}
                 </Link>
               ))}
-              <Link role="menuitem" to="/admin">
-                Admin (demo)
-              </Link>
-              <button role="menuitem" onClick={() => resetUser()}>
-                Start a fresh demo session
-              </button>
             </div>
           )}
         </div>
