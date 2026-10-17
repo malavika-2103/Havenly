@@ -98,6 +98,10 @@ export const api = {
   report: (id: string, reason: string) => post<{ message: string }>(`/reviews/${id}/report`, { reason }),
   compare: (slugs: string[]) => request<CompareResponse>(`/compare?ids=${slugs.map(encodeURIComponent).join(',')}`),
   interpret: (query: string, signal?: AbortSignal) => post<InterpretResult>('/search/interpret', { query }, { signal }),
+  pushKey: () => request<{ public_key: string }>('/push/key'),
+  pushSubscribe: (subscription: PushSubscriptionJSON) => post<{ subscribed: boolean }>('/push/subscription', subscription),
+  pushUnsubscribe: (endpoint: string) => request<{ subscribed: boolean }>('/push/subscription', { method: 'DELETE', body: JSON.stringify({ endpoint }) }),
+  pushTest: () => post<{ sent: number }>('/push/test', {}),
   webResults: (q: string, signal?: AbortSignal) => request<WebResultsResponse>(`/search/web${toQuery({ q })}`, { signal }),
   estimate: (slug: string, input: EstimateInput, signal?: AbortSignal) => post<Estimate>(`/properties/${encodeURIComponent(slug)}/estimate`, input, { signal }),
   createBooking: (body: EstimateInput & { property_slug: string; note?: string }, idempotencyKey: string) =>

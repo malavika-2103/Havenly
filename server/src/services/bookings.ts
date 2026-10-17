@@ -7,6 +7,7 @@ import { config } from '../config'
 import { badRequest, conflict, notFound } from '../lib/http'
 import { label, roomLabel } from '../lib/labels'
 import { computeEstimate, validateEstimateInput } from './estimate'
+import { freeBeds, notifyUserLater, notifyWaitlist } from './push'
 import type { BookingRequest, BookingStatus, Estimate } from '../../../shared/types'
 
 type Row = Record<string, any>
@@ -145,6 +146,7 @@ const TRANSITIONS: Record<string, BookingStatus[]> = {
 function setStatus(db: DB, b: Row, status: BookingStatus, by: string, note: string | null) {
   if (!TRANSITIONS[b.status]?.includes(status)) throw conflict('INVALID_TRANSITION', `Can’t move a request from ${b.status} to ${status}.`)
   const now = nowIso()
+  const bedsBefore = freeBeds(db, b.property_id, b.room_type)
   const tx = db.transaction(() => {
     if (status === 'accepted') {
       const res = db
@@ -162,7 +164,22 @@ function setStatus(db: DB, b: Row, status: BookingStatus, by: string, note: stri
     db.prepare('UPDATE booking_requests SET status = ?, status_history = ?, updated_at = ? WHERE id = ?').run(status, JSON.stringify(history), now, b.id)
   })
   tx()
-  return getBooking(db, b.reference)
+  const booking = getBooking(db, b.reference)
+
+  if (status === 'accepted' || status === 'declined') {
+    const accepted = status === 'accepted'
+    notifyUserLater(db, b.user_id, {
+      title: accepted ? 'Your booking request was accepted' : 'Your booking request was declined',
+      body: accepted
+        ? `${booking.property.name} accepted your request for a ${booking.room_label} (ref ${booking.reference}). Open Havenly for next steps.`
+        : `${booking.property.name} couldn’t take your request for a ${booking.room_label} (ref ${booking.reference}). Your shortlist is still saved.`,
+      url: '/requests',
+      tag: `booking-${booking.reference}`,
+    })
+  }
+  if (bedsBefore === 0 && freeBeds(db, b.property_id, b.room_type) > 0) notifyWaitlist(db, b.property_id, b.room_type)
+
+  return booking
 }
 
 /** Admin-only: simulate the owner's side of the lifecycle for the demo. */
@@ -190,5 +207,5 @@ export function joinWaitlist(db: DB, userId: string, slug: string, roomType: str
       .prepare(`SELECT COUNT(*) AS n FROM room_waitlist WHERE property_id = ? AND room_type = ? AND created_at <= (SELECT created_at FROM room_waitlist WHERE user_id = ? AND property_id = ? AND room_type = ?)`)
       .get(p.id, roomType, userId, p.id, roomType) as Row
   ).n
-  return { joined: true, position, next_available_date: room.next_available_date, message: `You’re number ${position} on the waitlist. In the demo, no notification is actually sent.` }
+  return { joined: true, position, next_available_date: room.next_available_date, message: `You’re number ${position} on the waitlist. Turn on notifications to hear the moment a bed opens up.` }
 }

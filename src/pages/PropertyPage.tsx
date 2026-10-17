@@ -7,6 +7,7 @@ import BookingCard from '../components/BookingCard'
 import ReviewCard from '../components/ReviewCard'
 import FactList from '../components/FactList'
 import SourceBadge from '../components/SourceBadge'
+import ShareButton from '../components/ShareButton'
 import { VerificationBadge, to12 } from '../components/PropertyCard'
 import { Loading, ErrorState } from '../components/States'
 import { api, formatDate, inr } from '../lib/api'
@@ -87,6 +88,7 @@ function Property({ p, reviews, reviewSort, setReviewSort }: { p: PropertyDetail
           <button className={`btn btn-sm ${isCompared ? 'btn-primary' : 'btn-outline'}`} onClick={() => toggleCompare(p.slug, p.name)}>
             <Scales size={16} /> {isCompared ? 'In compare' : 'Compare'}
           </button>
+          <ShareButton title={p.name} text={`${p.name} in ${p.sub_area.name}, ${p.area.name} on Havenly`} path={`/property/${p.slug}`} />
         </div>
       </div>
 

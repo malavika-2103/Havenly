@@ -4,6 +4,7 @@ import type { BookingRequest, Estimate, PropertyDetail, RoomType } from '../../s
 import { api, ApiError, formatDate, inr, newIdempotencyKey } from '../lib/api'
 import { useStore } from '../lib/store'
 import { Key, Shield, StarFill, Check, AlertTriangle, Info, Clock } from './Icons'
+import NotificationsToggle from './NotificationsToggle'
 
 const isoDay = (offsetDays: number) => {
   const d = new Date()
@@ -122,7 +123,10 @@ export default function BookingCard({ p }: { p: PropertyDetail }) {
           </p>
           {room.waitlist_open ? (
             waitlisted ? (
-              <p className="tiny">{waitlisted}</p>
+              <>
+                <p className="tiny">{waitlisted}</p>
+                <NotificationsToggle compact />
+              </>
             ) : (
               <button className="btn btn-primary btn-block" onClick={waitlist}>
                 Join the waitlist

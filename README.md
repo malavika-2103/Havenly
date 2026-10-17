@@ -20,11 +20,11 @@ npm run dev      # API on :8787 and the web app on http://localhost:5173 (Vite p
 | --- | --- |
 | `npm run seed` | Deterministic, idempotent seed. Re-running replaces all demo rows with identical data. **Use it to reset before a pitch.** |
 | `npm run validate` | 93 data checks (quotas, consistency between reviews and listings, area scope, provenance, owner privacy over the live API). Prints PASS/FAIL, exits 1 on failure. |
-| `npm test` | 37 API tests on a throwaway database (filters, coverage, compare cap, estimates, booking rules, privacy, body errors, live web results with Tavily mocked). |
+| `npm test` | 44 API tests on a throwaway database (filters, coverage, compare cap, estimates, booking rules, privacy, body errors, Tavily web results and push notifications with the network mocked). |
 | `npm run purge:demo` | Removes every `demo_seed` row in one transaction. Data from real users and manually verified data stays. |
 | `npm run typecheck` | Type-checks client and server. |
 
-`.env` keys: `PORT`, `HOST` (default `127.0.0.1`, only this computer; use `0.0.0.0` when deploying), `ACTIVE_AREA` (default `kakkanad`), `ADMIN_TOKEN` (default `havenly-admin-demo`), `TOKEN_SECRET`, `DB_PATH`, `DEMO_MODE`, `BOOKING_EXPIRY_HOURS`, `TAVILY_API_KEY` (optional, turns on live web results; see below).
+`.env` keys: `PORT`, `HOST` (default `127.0.0.1`, only this computer; use `0.0.0.0` when deploying), `ACTIVE_AREA` (default `kakkanad`), `ADMIN_TOKEN` (default `havenly-admin-demo`), `TOKEN_SECRET`, `DB_PATH`, `DEMO_MODE`, `BOOKING_EXPIRY_HOURS`, `TAVILY_API_KEY` (optional, live web results), `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` (optional, push notifications); see below.
 
 ## Pitch walkthrough (about 3 minutes)
 
@@ -120,6 +120,32 @@ How it stays honest and safe:
 - Tavily failures return `502 WEB_SEARCH_FAILED` (or `WEB_SEARCH_KEY_INVALID` for a rejected key) after an 8-second timeout, without exposing the provider's response.
 
 Code: `server/src/services/webSearch.ts`, route in `server/src/routes/public.ts`, UI in `src/components/WebResults.tsx`.
+
+## Push notifications
+
+Signed-in users can turn on notifications from **My booking requests** (or right after joining a waitlist). Havenly then sends a push notification when:
+
+- an owner **accepts** or **declines** their booking request (tapping it opens My booking requests), or
+- a room type they are **waitlisted** for goes from full to having a free bed, either because an admin updates the beds or because an accepted booking is cancelled (tapping it opens that place).
+
+It uses standard Web Push: `public/sw.js` (service worker that shows the notification), `src/lib/push.ts` and `src/components/NotificationsToggle.tsx` (opt-in), `server/src/services/push.ts` (sending), and these endpoints:
+
+| Method | Path | |
+| --- | --- | --- |
+| GET | `/api/push/key` | Public VAPID key the browser subscribes with |
+| POST | `/api/push/subscription` | Save this device's subscription (sign-in required) |
+| DELETE | `/api/push/subscription` | Remove it (only your own) |
+| POST | `/api/push/test` | Send yourself a test notification (5 per minute) |
+
+Keys: set `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` in `.env` for a deployment (`npx web-push generate-vapid-keys`). Without them, a key pair is created once in `server/data/vapid.json` (git-ignored).
+
+Safety: subscriptions are only accepted from real browser push services (Google, Mozilla, Microsoft, Apple), so the server can't be pointed at internal URLs; notifications only open pages on this site; subscriptions a browser has dropped (HTTP 404/410) are deleted automatically; sending never slows down or fails the request that triggered it.
+
+Try it in Chrome or Edge on `http://localhost:5173` (notifications need localhost or HTTPS). On iPhone, web push only works after adding the site to the Home Screen. The embedded browser inside the Claude app does not support service workers.
+
+## Sharing a place
+
+Every listing page has a **Share** button. On phones it opens the native share sheet (WhatsApp, Messages and so on) with the place's name and link; on desktop browsers without one it copies the link and confirms with a toast.
 
 ## Team
 

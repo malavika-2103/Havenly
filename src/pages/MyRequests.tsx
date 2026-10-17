@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { api, formatDate, inr } from '../lib/api'
 import { useAsync, useStore } from '../lib/store'
 import Art from '../components/Art'
+import NotificationsToggle from '../components/NotificationsToggle'
 import { Loading, ErrorState, Empty } from '../components/States'
 import { Key, Info, ArrowRight } from '../components/Icons'
 import type { BookingStatus } from '../../shared/types'
@@ -41,8 +42,9 @@ export default function MyRequests() {
         </button>
       </div>
       <p className="demo-callout">
-        <Info size={14} /> Demo: owner responses are simulated from the admin screen. No messages are sent and no payment is taken.
+        <Info size={14} /> Demo: owner responses are simulated from the admin screen. No payment is taken.
       </p>
+      <NotificationsToggle />
 
       {list.loading && !list.data && <Loading />}
       {list.error && <ErrorState error={list.error} onRetry={list.reload} />}

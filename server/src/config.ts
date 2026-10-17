@@ -22,4 +22,9 @@ export const config = {
   maxCompare: 3,
   /** Live web results on the search page. Empty = feature off (endpoint answers 503, UI hides the section). */
   tavilyApiKey: (process.env.TAVILY_API_KEY ?? '').trim(),
+  /** Web Push keys. Optional: without them a key pair is generated once into server/data/vapid.json. */
+  vapidPublicKey: (process.env.VAPID_PUBLIC_KEY ?? '').trim(),
+  vapidPrivateKey: (process.env.VAPID_PRIVATE_KEY ?? '').trim(),
+  /** Contact the push services can reach if notifications misbehave (mailto: or https: URL). */
+  vapidSubject: process.env.VAPID_SUBJECT ?? 'mailto:havenly-demo@example.com',
 }

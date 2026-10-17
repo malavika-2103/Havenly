@@ -12,6 +12,9 @@ import type { Server } from 'node:http'
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'havenly-test-'))
 process.env.DB_PATH = path.join(dir, 'test.db')
 process.env.ADMIN_TOKEN = 'test-admin-token'
+// Fixed push keys so tests never create server/data/vapid.json.
+process.env.VAPID_PUBLIC_KEY = 'test-vapid-public-key'
+process.env.VAPID_PRIVATE_KEY = 'test-vapid-private-key'
 
 const { seed } = await import('../seed/seed')
 const { createApp } = await import('../src/app')
@@ -470,5 +473,117 @@ describe('live web results (Tavily)', async () => {
     let last = 0
     for (let i = 0; i < 21; i++) last = (await get(`/api/search/web?q=query+${i}`)).status
     assert.equal(last, 429)
+  })
+})
+
+describe('push notifications', async () => {
+  const push = await import('../src/services/push')
+  type Sent = { endpoint: string; payload: any }
+  let sent: Sent[] = []
+  let fail: Record<string, number> = {}
+  push.setPushSenderForTests(async (sub, payload) => {
+    if (fail[sub.endpoint]) throw Object.assign(new Error('push failed'), { statusCode: fail[sub.endpoint] })
+    sent.push({ endpoint: sub.endpoint, payload: JSON.parse(payload) })
+  })
+  const settle = () => new Promise((r) => setTimeout(r, 30)) // notifications are fire-and-forget
+  let n = 0
+  const subscription = () => ({
+    endpoint: `https://fcm.googleapis.com/fcm/send/test-${++n}`,
+    keys: { p256dh: 'BNcRdreALRFXTkOOUHK1EtK2wtaz5Ry4YfYCA_0QTpQtUbVlUls0VJXg7A8u-Ts1XbjhazAkj7I99e8QcYP7DkM', auth: 'tBHItJI5svbpez7KI4CCXg' },
+  })
+  async function subscribedUser(name: string) {
+    const auth = await login(name)
+    const sub = subscription()
+    assert.equal((await post('/api/push/subscription', sub, auth)).status, 201)
+    return { auth, endpoint: sub.endpoint }
+  }
+  const TULSI_SINGLE = 'room_tulsi_nest_womens_pg_single'
+  const setBeds = (beds: number) => call('PATCH', `/api/admin/rooms/${TULSI_SINGLE}`, { available_beds: beds }, ADMIN)
+
+  test('exposes the public key and needs sign-in to subscribe', async () => {
+    assert.equal((await get('/api/push/key')).body.public_key, 'test-vapid-public-key')
+    assert.equal((await post('/api/push/subscription', subscription())).status, 401)
+  })
+
+  test('only accepts subscriptions from real browser push services', async () => {
+    const auth = await login('Push validator')
+    for (const endpoint of ['http://fcm.googleapis.com/x', 'https://169.254.169.254/latest', 'https://localhost:8787/api', 'https://evil.example.com/fcm.googleapis.com', 'not a url']) {
+      const r = await post('/api/push/subscription', { ...subscription(), endpoint }, auth)
+      assert.equal(r.status, 400, endpoint)
+      assert.equal(r.body.error.code, 'INVALID_SUBSCRIPTION')
+    }
+    assert.equal((await post('/api/push/subscription', { endpoint: 'https://fcm.googleapis.com/fcm/send/x', keys: { p256dh: '<script>', auth: '' } }, auth)).status, 400)
+  })
+
+  test('the owner accepting or declining notifies the requester', async () => {
+    const { auth, endpoint } = await subscribedUser('Push requester')
+    sent = []
+    const mk = (slug: string) => post('/api/bookings', { property_slug: slug, room_type: 'double', move_in_date: inDays(12), duration_months: 6 }, auth)
+    const a = (await mk('jasmine-court-working-womens-pg')).body.booking.reference
+    const d = (await mk('kayal-house-ladies-hostel')).body.booking.reference
+    await post(`/api/admin/bookings/${a}/status`, { status: 'owner_notified' }, ADMIN)
+    await settle()
+    assert.equal(sent.length, 0, 'owner_notified is not worth a notification')
+    await post(`/api/admin/bookings/${a}/status`, { status: 'accepted' }, ADMIN)
+    await post(`/api/admin/bookings/${d}/status`, { status: 'declined' }, ADMIN)
+    await settle()
+    assert.equal(sent.length, 2)
+    assert.ok(sent.every((s) => s.endpoint === endpoint))
+    const accepted = sent.find((s) => s.payload.title.includes('accepted'))!
+    assert.match(accepted.payload.body, new RegExp(a))
+    assert.equal(accepted.payload.url, '/requests')
+    assert.ok(sent.some((s) => s.payload.title.includes('declined')))
+    await post(`/api/bookings/${a}/cancel`, {}, auth) // give the bed back
+  })
+
+  test('waitlisted users hear when an admin frees a bed in a full room', async () => {
+    const { auth, endpoint } = await subscribedUser('Waitlister one')
+    assert.equal((await post('/api/properties/tulsi-nest-womens-pg/waitlist', { room_type: 'single' }, auth)).status, 201)
+    sent = []
+    assert.equal((await setBeds(1)).status, 200)
+    await settle()
+    const mine = sent.filter((s) => s.endpoint === endpoint)
+    assert.equal(mine.length, 1)
+    assert.match(mine[0].payload.title, /bed just opened/)
+    assert.equal(mine[0].payload.url, '/property/tulsi-nest-womens-pg')
+    sent = []
+    await setBeds(2) // already had a bed: no repeat notification
+    await settle()
+    assert.equal(sent.length, 0)
+    await setBeds(0)
+  })
+
+  test('waitlisted users hear when an accepted booking in a full room is cancelled', async () => {
+    const { auth: waiter, endpoint } = await subscribedUser('Waitlister two')
+    await post('/api/properties/tulsi-nest-womens-pg/waitlist', { room_type: 'single' }, waiter)
+    await setBeds(1)
+    const booker = await login('Booker')
+    const ref = (await post('/api/bookings', { property_slug: 'tulsi-nest-womens-pg', room_type: 'single', move_in_date: inDays(9), duration_months: 6 }, booker)).body.booking.reference
+    await post(`/api/admin/bookings/${ref}/status`, { status: 'accepted' }, ADMIN) // room is full again
+    await settle()
+    sent = []
+    await post(`/api/bookings/${ref}/cancel`, {}, booker)
+    await settle()
+    assert.ok(sent.some((s) => s.endpoint === endpoint && /bed just opened/.test(s.payload.title)))
+    await setBeds(0)
+  })
+
+  test('expired subscriptions are removed; the test button reports when nothing is subscribed', async () => {
+    const { auth, endpoint } = await subscribedUser('Push expiry')
+    assert.equal((await post('/api/push/test', {}, auth)).body.sent, 1)
+    fail[endpoint] = 410
+    assert.equal((await post('/api/push/test', {}, auth)).status, 404)
+    const left = getDb().prepare('SELECT COUNT(*) AS n FROM push_subscriptions WHERE endpoint = ?').get(endpoint) as any
+    assert.equal(left.n, 0)
+    delete fail[endpoint]
+  })
+
+  test('unsubscribe only removes your own subscription', async () => {
+    const a = await subscribedUser('Owner of sub')
+    const b = await login('Someone else')
+    await call('DELETE', '/api/push/subscription', { endpoint: a.endpoint }, b)
+    assert.equal((getDb().prepare('SELECT COUNT(*) AS n FROM push_subscriptions WHERE endpoint = ?').get(a.endpoint) as any).n, 1)
+    await call('DELETE', '/api/push/subscription', { endpoint: a.endpoint }, a.auth)
+    assert.equal((getDb().prepare('SELECT COUNT(*) AS n FROM push_subscriptions WHERE endpoint = ?').get(a.endpoint) as any).n, 0)
   })
 })

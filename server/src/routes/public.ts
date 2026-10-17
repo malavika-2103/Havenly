@@ -11,6 +11,7 @@ import { interpretQuery } from '../services/interpret'
 import { computeEstimate, validateEstimateInput } from '../services/estimate'
 import { cancelBooking, createBooking, getBooking, joinWaitlist, listBookings } from '../services/bookings'
 import { checkWebRateLimit, searchWeb } from '../services/webSearch'
+import { checkPushTestLimit, notifyUser, removeSubscription, saveSubscription, vapidKeys } from '../services/push'
 import type { AreaInfo, Meta } from '../../../shared/types'
 
 export const DEMO_NOTICE = 'Demo data for presentation. Listings and reviews are fictional samples.'
@@ -173,6 +174,26 @@ export function publicRoutes() {
       }
       const slugs = (d.prepare('SELECT p.slug FROM saved_properties sp JOIN properties p ON p.id = sp.property_id WHERE sp.user_id = ?').all(req.user!.id) as { slug: string }[]).map((x) => x.slug)
       return { slugs }
+    }),
+  )
+
+  // ---------- push notifications ----------
+  r.get('/push/key', route(() => ({ public_key: vapidKeys().publicKey })))
+  r.post('/push/subscription', requireUser, route((req) => saveSubscription(db(), req.user!.id, req.body), 201))
+  r.delete('/push/subscription', requireUser, route((req) => removeSubscription(db(), req.user!.id, req.body?.endpoint)))
+  r.post(
+    '/push/test',
+    requireUser,
+    route(async (req) => {
+      checkPushTestLimit(req.user!.id)
+      const sent = await notifyUser(db(), req.user!.id, {
+        title: 'Notifications are on',
+        body: 'Havenly will tell you when a booking request is answered or a waitlisted bed opens up.',
+        url: '/requests',
+        tag: 'havenly-test',
+      })
+      if (!sent) throw notFound('No active notification subscription on this account. Turn notifications on first.')
+      return { sent }
     }),
   )
 

@@ -7,6 +7,7 @@ import { route, badRequest, notFound, conflict } from '../lib/http'
 import { requireAdmin } from '../auth'
 import { adminSetStatus, listBookings } from '../services/bookings'
 import { purgeDemo } from '../services/demoData'
+import { notifyWaitlist } from '../services/push'
 
 type Row = Record<string, any>
 
@@ -171,12 +172,15 @@ export function adminRoutes() {
       const fields = pick(req.body ?? {}, ROOM_FIELDS)
       if (!Object.keys(fields).length) throw badRequest('NO_FIELDS', 'Nothing to update.')
       const now = nowIso()
+      const before = db().prepare('SELECT available_beds FROM room_inventory WHERE id = ?').get(req.params.roomId) as Row | undefined
       const res = db()
         .prepare(`UPDATE room_inventory SET ${Object.keys(fields).map((f) => `${f} = @${f}`).join(', ')}, availability_updated_at = @now, updated_at = @now WHERE id = @id`)
         .run({ ...fields, now, id: req.params.roomId })
       if (!res.changes) throw notFound()
-      const room = db().prepare('SELECT property_id FROM room_inventory WHERE id = ?').get(req.params.roomId) as Row
+      const room = db().prepare('SELECT property_id, room_type, available_beds FROM room_inventory WHERE id = ?').get(req.params.roomId) as Row
       refreshRentRange(room.property_id)
+      // A full room just got a bed back: tell the waitlist.
+      if (before?.available_beds === 0 && room.available_beds > 0) notifyWaitlist(db(), room.property_id, room.room_type)
       return { updated: true }
     }),
   )

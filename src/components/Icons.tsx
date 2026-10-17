@@ -323,3 +323,19 @@ export const iconMap: Record<string, (p: P) => JSX.Element> = {
   shield: Shield,
   bus: Bus,
 }
+
+export const Share = (p: P) => (
+  <svg {...base(20, p)}>
+    <circle cx="18" cy="5" r="2.6" />
+    <circle cx="6" cy="12" r="2.6" />
+    <circle cx="18" cy="19" r="2.6" />
+    <path d="m8.3 10.8 7.4-4.4M8.3 13.2l7.4 4.4" />
+  </svg>
+)
+
+export const Bell = (p: P) => (
+  <svg {...base(20, p)}>
+    <path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" />
+    <path d="M10 20a2 2 0 0 0 4 0" />
+  </svg>
+)

@@ -4,3 +4,5 @@ dist
 .DS_Store
 .env
 server/data/*.db*
+server/data/vapid.json
+.env.bak*
